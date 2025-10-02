@@ -1,0 +1,25 @@
+{
+  "name": "trading-bot",
+  "version": "1.0.0",
+  "description": "Trading bot service for monitoring stocks and sending notifications",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.3",
+    "axios": "^0.25.0",
+    "randomstring": "^1.2.2",
+    "ws": "^8.4.2"
+  },
+  "keywords": [
+    "trading",
+    "bot",
+    "notifications",
+    "indicators"
+  ],
+  "author": "",
+  "license": "MIT"
+}

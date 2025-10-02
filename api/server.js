@@ -9,8 +9,8 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = 3000
 
-// Serve static files
-app.use(express.static('public'))
+// Serve static files from frontend
+app.use(express.static(path.join(__dirname, '../frontend/public')))
 
 // Store candles data
 let candlesData = null

@@ -1,18 +1,31 @@
 {
-  "name": "bofi",
+  "name": "trading-bot-system",
   "version": "1.0.0",
-  "description": "TradingView WebSocket data fetcher",
-  "main": "main.js",
-  "type": "module",
+  "description": "A comprehensive trading bot system with API, frontend, and bot services",
+  "private": true,
+  "workspaces": [
+    "api",
+    "frontend",
+    "bot"
+  ],
   "scripts": {
-    "start": "node main.js",
-    "dev": "node main.js"
+    "dev:api": "cd api && npm start",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:bot": "cd bot && npm start",
+    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:bot\"",
+    "install:all": "npm install && cd api && npm install && cd ../bot && npm install",
+    "start": "npm run dev:api"
   },
-  "dependencies": {
-    "axios": "^0.25.0",
-    "randomstring": "^1.2.2",
-    "ws": "^8.4.2",
-    "express": "^4.18.2",
-    "lightweight-charts": "^5.0.9"
-  }
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "trading",
+    "bot",
+    "tradingview",
+    "candlesticks",
+    "indicators"
+  ],
+  "author": "",
+  "license": "MIT"
 }
