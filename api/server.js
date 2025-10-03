@@ -2,6 +2,7 @@ import { connect, getCandles } from './tradingview-ws.js'
 import express from 'express'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { hydrateWithIndicators } from './utils/indicators.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -17,20 +18,30 @@ let candlesData = null
 
 // API endpoint to get candles data
 app.get('/api/candles', async (req, res) => {
-  const { symbol = 'GOOGL', timeframe = '1D', amount = 100 } = req.query
+  const { symbol = 'GOOGL', timeframe = '1D', amount = 100, hydrate } = req.query
   
   try {
     console.log(`Fetching ${symbol} data (${timeframe}, ${amount} candles)...`)
     const connection = await connect()
+    
+    const period = 14
+    const amountToFetch = hydrate ? parseInt(amount) + (period * 2 - 1) : parseInt(amount)
+
     const candles = await getCandles({
       connection,
       symbols: [symbol],
-      amount: parseInt(amount),
+      amount: amountToFetch,
       timeframe: timeframe
     })
     await connection.close()
     
-    const data = candles[0]
+    let data = candles[0]
+    
+    if (hydrate) {
+      data = hydrateWithIndicators(data, period)
+      data = data.slice(-(parseInt(amount)))
+    }
+
     console.log(`Loaded ${data.length} candles for ${symbol}`)
     res.json(data)
   } catch (error) {
