@@ -93,11 +93,18 @@ export async function connect(options = {}) {
   })
 }
 
-export async function getCandles({ connection, symbols, amount, timeframe = 60 }) {
+export async function getCandles({ connection, symbols, amount, timeframe = 60, from, to, extraCandles = 0 }) {
+  if (typeof from === 'string') {
+    from = Math.floor(new Date(from).getTime() / 1000)
+  }
+  if (typeof to === 'string') {
+    to = Math.floor(new Date(to).getTime() / 1000)
+  }
+  
   if (symbols.length === 0) return []
 
   const chartSession = "cs_" + randomstring.generate(12)
-  const batchSize = amount && amount < MAX_BATCH_SIZE ? amount : MAX_BATCH_SIZE
+  const batchSize = from ? MAX_BATCH_SIZE : (amount && amount < MAX_BATCH_SIZE ? amount : MAX_BATCH_SIZE)
 
   return new Promise(resolve => {
     const allCandles = []
@@ -120,15 +127,22 @@ export async function getCandles({ connection, symbols, amount, timeframe = 60 }
       // loaded all requested candles
       if (['series_completed', 'symbol_error'].includes(event.name)) {
         const loadedCount = currentSymCandles.length
-        if (loadedCount > 0 && loadedCount % batchSize === 0 && (!amount || loadedCount < amount)) {
-          connection.send('request_more_data', [chartSession, 'sds_1', batchSize])
-          return
+        
+        if (loadedCount > 0 && loadedCount % batchSize === 0) {
+          if (from) {
+            const oldestTimestamp = currentSymCandles[loadedCount - 1].v[0]
+            const candlesBeforeFrom = currentSymCandles.filter(c => c.v[0] < from).length
+            if (oldestTimestamp > from || candlesBeforeFrom < extraCandles) {
+              connection.send('request_more_data', [chartSession, 'sds_1', batchSize])
+              return
+            }
+          } else if (amount && loadedCount < amount) {
+            connection.send('request_more_data', [chartSession, 'sds_1', batchSize])
+            return
+          }
         }
 
         // loaded all candles for current symbol
-
-        if (amount) currentSymCandles = currentSymCandles.slice(0, amount)
-
         const candles = currentSymCandles.map(c => ({
           timestamp: c.v[0],
           date: new Date(c.v[0] * 1000).toISOString(),
