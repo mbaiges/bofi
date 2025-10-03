@@ -28,13 +28,15 @@ npm start
     - `symbol` (string, default: 'GOOGL')
     - `timeframe` (string, default: '1D')
     - `amount` (number, default: 100)
+    - `from` (string, optional): Start date for candle data (e.g., '2025-01-01').
+    - `to` (string, optional): End date for candle data (e.g., '2025-01-02').
     - `hydrate` (boolean, optional): If true, adds technical indicators to the candle data.
 
 ### Example
 
 **Request:**
 ```bash
-curl --location 'http://127.0.0.1:3000/api/candles?symbol=GOOGL&timeframe=1D&amount=2&hydrate=true'
+curl --location 'http://127.0.0.1:3000/api/candles?symbol=GOOGL&timeframe=1D&from=2025-01-01&to=2025-01-02&amount=2&hydrate=true'
 ```
 
 **Response:**
