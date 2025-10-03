@@ -1,0 +1,22 @@
+import { Router } from 'express'
+import { getCandles } from '../services/candles.js'
+
+const router = Router()
+
+router.get('/', async (req, res) => {
+  const { symbol = 'GOOGL', timeframe = '1D', amount = 100, hydrate } = req.query
+  
+  try {
+    console.log(`Fetching ${symbol} data (${timeframe}, ${amount} candles)...`)
+    
+    const data = await getCandles({ symbol, timeframe, amount, hydrate })
+
+    console.log(`Loaded ${data.length} candles for ${symbol}`)
+    res.json(data)
+  } catch (error) {
+    console.error('Error fetching data:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+export default router

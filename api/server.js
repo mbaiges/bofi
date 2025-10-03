@@ -1,8 +1,7 @@
-import { connect, getCandles } from './tradingview-ws.js'
 import express from 'express'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { hydrateWithIndicators } from './utils/indicators.js'
+import apiRouter from './routes/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -13,42 +12,8 @@ const PORT = 3000
 // Serve static files from frontend
 app.use(express.static(path.join(__dirname, '../frontend/public')))
 
-// Store candles data
-let candlesData = null
-
-// API endpoint to get candles data
-app.get('/api/candles', async (req, res) => {
-  const { symbol = 'GOOGL', timeframe = '1D', amount = 100, hydrate } = req.query
-  
-  try {
-    console.log(`Fetching ${symbol} data (${timeframe}, ${amount} candles)...`)
-    const connection = await connect()
-    
-    const period = 14
-    const amountToFetch = hydrate ? parseInt(amount) + (period * 2 - 1) : parseInt(amount)
-
-    const candles = await getCandles({
-      connection,
-      symbols: [symbol],
-      amount: amountToFetch,
-      timeframe: timeframe
-    })
-    await connection.close()
-    
-    let data = candles[0]
-    
-    if (hydrate) {
-      data = hydrateWithIndicators(data, period)
-      data = data.slice(-(parseInt(amount)))
-    }
-
-    console.log(`Loaded ${data.length} candles for ${symbol}`)
-    res.json(data)
-  } catch (error) {
-    console.error('Error fetching data:', error)
-    res.status(500).json({ error: error.message })
-  }
-})
+// API routes
+app.use('/api/candles', apiRouter)
 
 // Start server
 app.listen(PORT, () => {
