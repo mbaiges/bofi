@@ -1,31 +1,23 @@
-import { connect, getCandles as getCandlesFromRepository } from '../repositories/tradingview.js'
+import { getCandles as getCandlesFromRepository } from '../repositories/polygon.js'
 import { hydrateWithIndicators } from '../utils/indicators.js'
 
 export async function getCandles(options) {
   const { symbol, timeframe, amount, hydrate, from, to } = options
 
-  const connection = await connect()
-  
   const period = 14
-  const extraCandles = hydrate ? (period * 2 - 1) : 0
   
   const repoOptions = {
-    connection,
-    symbols: [symbol],
-    timeframe,
+    ticker: symbol,
     from,
     to,
-    extraCandles
-  }
-
-  if (!from && amount) {
-    repoOptions.amount = parseInt(amount) + extraCandles
+    range: 1, // defaulted to 1, can be changed
+    timespan: 'day', // defaulted to 'day', can be changed
+    limit: 50000,
   }
 
   const candles = await getCandlesFromRepository(repoOptions)
-  await connection.close()
   
-  let data = candles[0] || []
+  let data = candles || []
   
   if (hydrate) {
     data = hydrateWithIndicators(data, period)

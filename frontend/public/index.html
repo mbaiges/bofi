@@ -128,12 +128,22 @@
 </head>
 <body>
     <div class="container">
-        <h1 id="chart-title">TradingView Candlestick Chart</h1>
+        <h1 id="chart-title">Polygon.io Candlestick Chart</h1>
         
         <div class="controls">
             <div class="control-group">
                 <label for="symbol">Symbol:</label>
                 <input type="text" id="symbol" value="GOOGL" placeholder="Enter symbol (e.g., AAPL, MSFT, TSLA)">
+            </div>
+
+            <div class="control-group">
+                <label for="from-date">From:</label>
+                <input type="date" id="from-date">
+            </div>
+
+            <div class="control-group">
+                <label for="to-date">To:</label>
+                <input type="date" id="to-date">
             </div>
             
             <div class="control-group">
@@ -162,7 +172,7 @@
         </div>
         
         <div class="info">
-            <p><strong>Data Source:</strong> TradingView WebSocket API</p>
+            <p><strong>Data Source:</strong> Polygon.io API</p>
             <p><strong>Current Symbol:</strong> <span id="current-symbol">GOOGL</span></p>
             <p><strong>Current Timeframe:</strong> <span id="current-timeframe">1D</span></p>
             <p><strong>Chart Library:</strong> <a href="https://github.com/tradingview/lightweight-charts" target="_blank" style="color: #4fc3f7;">TradingView Lightweight Charts</a></p>

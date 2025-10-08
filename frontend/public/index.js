@@ -1,6 +1,6 @@
 let currentChart = null;
 
-async function loadChart(symbol = 'GOOGL', timeframe = '1D', amount = 100) {
+async function loadChart(symbol = 'GOOGL', timeframe = '1D', amount = 100, from, to) {
     try {
         // Show loading state
         document.getElementById('loading').style.display = 'block';
@@ -12,8 +12,15 @@ async function loadChart(symbol = 'GOOGL', timeframe = '1D', amount = 100) {
         loadButton.disabled = true;
         loadButton.textContent = 'Loading...';
         
+        let url = `/api/candles?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}`;
+        if (from && to) {
+            url += `&from=${from}&to=${to}`;
+        } else {
+            url += `&amount=${amount}`;
+        }
+
         // Fetch data from API
-        const response = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&amount=${amount}`);
+        const response = await fetch(url);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -78,37 +85,6 @@ async function loadChart(symbol = 'GOOGL', timeframe = '1D', amount = 100) {
         // Set the data
         candlestickSeries.setData(chartData);
         
-        // Create a separate pane for volume (smaller height)
-        const volumePane = currentChart.addPane({
-            height: 120, // Smaller height for volume pane
-        });
-        
-        // Add volume series to the separate pane
-        const volumeSeries = volumePane.addSeries(LightweightCharts.HistogramSeries, {
-            color: '#26a69a',
-            priceFormat: {
-                type: 'volume',
-            },
-            priceScaleId: '', // Separate price scale for volume
-        });
-        
-        // Configure volume scale margins for better display
-        volumeSeries.priceScale().applyOptions({
-            scaleMargins: {
-                top: 0.2, // Small margin at top
-                bottom: 0, // No margin at bottom
-            },
-        });
-        
-        const volumeData = candles.map(candle => ({
-            time: candle.date.split('T')[0],
-            value: candle.volume,
-            color: candle.close >= candle.open ? '#26a69a' : '#ef5350',
-        }));
-        
-        // Set the volume data
-        volumeSeries.setData(volumeData);
-        
         // Fit the chart to the data
         currentChart.timeScale().fitContent();
         
@@ -134,21 +110,40 @@ async function loadChart(symbol = 'GOOGL', timeframe = '1D', amount = 100) {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates (3 months ago to today)
+    const toDate = new Date();
+    const fromDate = new Date();
+    fromDate.setMonth(toDate.getMonth() - 3);
+    document.getElementById('to-date').value = toDate.toISOString().split('T')[0];
+    document.getElementById('from-date').value = fromDate.toISOString().split('T')[0];
+    
     // Load initial chart
-    loadChart();
+    loadChart(
+        'GOOGL',
+        '1D',
+        100,
+        document.getElementById('from-date').value,
+        document.getElementById('to-date').value
+    );
     
     // Load chart button click handler
     document.getElementById('load-chart').addEventListener('click', function() {
         const symbol = document.getElementById('symbol').value.trim().toUpperCase();
         const timeframe = document.getElementById('timeframe').value;
         const amount = parseInt(document.getElementById('amount').value) || 100;
+        const from = document.getElementById('from-date').value;
+        const to = document.getElementById('to-date').value;
         
         if (!symbol) {
             alert('Please enter a symbol');
             return;
         }
         
-        loadChart(symbol, timeframe, amount);
+        if (from && to) {
+            loadChart(symbol, timeframe, null, from, to);
+        } else {
+            loadChart(symbol, timeframe, amount);
+        }
     });
     
     // Enter key handler for symbol input
