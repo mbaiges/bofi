@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename)
 dotenv.config({ path: path.resolve(__dirname, 'config/.env') })
 
 const app = express()
+app.disable('etag');
 const PORT = 3000
 
 // Serve static files from frontend

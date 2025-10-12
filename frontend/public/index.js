@@ -1,25 +1,22 @@
-let currentChart = null;
+let chart = null;
 
-async function loadChart(symbol = 'GOOGL', timeframe = '1D', amount = 100, from, to) {
+async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 100, from, to) {
     try {
-        // Show loading state
         document.getElementById('loading').style.display = 'block';
         document.getElementById('error').style.display = 'none';
         document.getElementById('chart').style.display = 'none';
         
-        // Disable the load button
         const loadButton = document.getElementById('load-chart');
         loadButton.disabled = true;
         loadButton.textContent = 'Loading...';
         
-        let url = `/api/candles?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}`;
+        let url = `/api/candles?symbol=${encodeURIComponent(symbol)}&range=${range}&timespan=${timespan}&hydrate=true`;
         if (from && to) {
-            url += `&from=${from}&to=${to}`;
+            url += `&from=${from}&to=${to}&limit=50000`;
         } else {
-            url += `&amount=${amount}`;
+            url += `&limit=${limit}`;
         }
 
-        // Fetch data from API
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -32,68 +29,94 @@ async function loadChart(symbol = 'GOOGL', timeframe = '1D', amount = 100, from,
             throw new Error('No data received');
         }
         
-        // Hide loading, show chart
         document.getElementById('loading').style.display = 'none';
         document.getElementById('chart').style.display = 'block';
         
-        // Destroy existing chart if it exists
-        if (currentChart) {
-            currentChart.remove();
-        }
+        if (chart) chart.remove();
         
-        // Create the chart
-        currentChart = LightweightCharts.createChart(document.getElementById('chart'), {
-            width: document.getElementById('chart').clientWidth,
-            height: 500,
+        const chartElement = document.getElementById('chart');
+        chart = LightweightCharts.createChart(chartElement, {
+            width: chartElement.clientWidth,
+            height: 600,
             layout: {
                 background: { color: '#2d2d2d' },
                 textColor: '#d1d4dc',
             },
             grid: {
-                vertLines: { color: '#2d2d2d' },
-                horzLines: { color: '#2d2d2d' },
+                vertLines: { color: '#444' },
+                horzLines: { color: '#444' },
             },
             crosshair: {
                 mode: LightweightCharts.CrosshairMode.Normal,
-            },
-            rightPriceScale: {
-                borderColor: '#485c7b',
             },
             timeScale: {
                 borderColor: '#485c7b',
             },
         });
         
-        // Create candlestick series
-        const candlestickSeries = currentChart.addSeries(LightweightCharts.CandlestickSeries, {
+        // Pane 0 (default) for candlesticks
+        const candlestickSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
             upColor: '#26a69a',
             downColor: '#ef5350',
             borderVisible: false,
             wickUpColor: '#26a69a',
             wickDownColor: '#ef5350',
         });
+
+        // Pane 1 for Volume
+        const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+            color: '#26a69a',
+            priceFormat: { type: 'volume' },
+        }, 1); // <-- Correct API: Pass pane index as 2nd argument
+
+        // Pane 2 for DMI
+        const adxSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2, title: 'ADX' }, 2);
+        const pdiSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#26a69a', lineWidth: 2, title: '+DI' }, 2);
+        const ndiSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#ef5350', lineWidth: 2, title: '-DI' }, 2);
         
-        // Convert our data to the format expected by the chart
+        // Set pane heights
+        const mainPane = chart.panes()[0];
+        const volumePane = chart.panes()[1];
+        const dmiPane = chart.panes()[2];
+        mainPane.setHeight(350);
+        volumePane.setHeight(100);
+        dmiPane.setHeight(150);
+
         const chartData = candles.map(candle => ({
-            time: candle.date.split('T')[0], // Convert to YYYY-MM-DD format
+            time: candle.date.split('T')[0],
             open: candle.open,
             high: candle.high,
             low: candle.low,
             close: candle.close,
         }));
+
+        const volumeData = candles.map(candle => ({
+            time: candle.date.split('T')[0],
+            value: candle.volume,
+            color: candle.close >= candle.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
+        }));
         
-        // Set the data
         candlestickSeries.setData(chartData);
+        volumeSeries.setData(volumeData);
+
+        const dmiData = candles.map(c => ({
+            time: c.date.split('T')[0],
+            adx: c.indicators?.dmi?.adx,
+            pdi: c.indicators?.dmi?.di_positive,
+            ndi: c.indicators?.dmi?.di_negative
+        })).filter(d => d.adx !== null);
         
-        // Fit the chart to the data
-        currentChart.timeScale().fitContent();
+        adxSeries.setData(dmiData.map(d => ({ time: d.time, value: d.adx })));
+        pdiSeries.setData(dmiData.map(d => ({ time: d.time, value: d.pdi })));
+        ndiSeries.setData(dmiData.map(d => ({ time: d.time, value: d.ndi })));
+
+        chart.timeScale().fitContent();
         
-        // Update info display
         document.getElementById('current-symbol').textContent = symbol;
-        document.getElementById('current-timeframe').textContent = timeframe;
+        document.getElementById('current-timespan').textContent = `${range} ${timespan.charAt(0).toUpperCase() + timespan.slice(1)}`;
         document.getElementById('chart-title').textContent = `${symbol} Candlestick Chart`;
         
-        console.log(`Chart loaded with ${candles.length} candles for ${symbol} (${timeframe})`);
+        console.log(`Chart loaded with ${candles.length} candles for ${symbol} (${range} ${timespan})`);
         
     } catch (error) {
         console.error('Error loading chart:', error);
@@ -101,36 +124,33 @@ async function loadChart(symbol = 'GOOGL', timeframe = '1D', amount = 100, from,
         document.getElementById('error').style.display = 'block';
         document.getElementById('error').textContent = `Error: ${error.message}`;
     } finally {
-        // Re-enable the load button
         const loadButton = document.getElementById('load-chart');
         loadButton.disabled = false;
         loadButton.textContent = 'Load Chart';
     }
 }
 
-// Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Set default dates (3 months ago to today)
     const toDate = new Date();
     const fromDate = new Date();
     fromDate.setMonth(toDate.getMonth() - 3);
     document.getElementById('to-date').value = toDate.toISOString().split('T')[0];
     document.getElementById('from-date').value = fromDate.toISOString().split('T')[0];
     
-    // Load initial chart
     loadChart(
         'GOOGL',
-        '1D',
+        1,
+        'day',
         100,
         document.getElementById('from-date').value,
         document.getElementById('to-date').value
     );
     
-    // Load chart button click handler
     document.getElementById('load-chart').addEventListener('click', function() {
         const symbol = document.getElementById('symbol').value.trim().toUpperCase();
-        const timeframe = document.getElementById('timeframe').value;
-        const amount = parseInt(document.getElementById('amount').value) || 100;
+        const range = parseInt(document.getElementById('range').value) || 1;
+        const timespan = document.getElementById('timespan').value;
+        const limit = parseInt(document.getElementById('limit').value) || 100;
         const from = document.getElementById('from-date').value;
         const to = document.getElementById('to-date').value;
         
@@ -140,13 +160,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (from && to) {
-            loadChart(symbol, timeframe, null, from, to);
+            loadChart(symbol, range, timespan, null, from, to);
         } else {
-            loadChart(symbol, timeframe, amount);
+            loadChart(symbol, range, timespan, limit);
         }
     });
     
-    // Enter key handler for symbol input
     document.getElementById('symbol').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             document.getElementById('load-chart').click();
@@ -154,10 +173,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Handle window resize
 window.addEventListener('resize', () => {
-    if (currentChart) {
-        currentChart.applyOptions({
+    if (chart) {
+        chart.applyOptions({
             width: document.getElementById('chart').clientWidth,
         });
     }

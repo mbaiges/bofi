@@ -51,7 +51,7 @@ export async function getCandles(options) {
     to: repoTo,
     range,
     timespan,
-    limit,
+    limit: options.limit || 50000,
   }
 
   const candles = await getCandlesFromRepository(repoOptions)

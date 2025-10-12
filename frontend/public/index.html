@@ -147,19 +147,24 @@
             </div>
             
             <div class="control-group">
-                <label for="timeframe">Timeframe:</label>
-                <select id="timeframe">
-                    <option value="1">1 minute</option>
-                    <option value="1H">1 hour</option>
-                    <option value="1D" selected>1 day</option>
-                    <option value="1W">1 week</option>
-                    <option value="1M">1 month</option>
+                <label for="range">Range:</label>
+                <input type="number" id="range" value="1" min="1">
+            </div>
+
+            <div class="control-group">
+                <label for="timespan">Timespan:</label>
+                <select id="timespan">
+                    <option value="minute">Minute</option>
+                    <option value="hour">Hour</option>
+                    <option value="day" selected>Day</option>
+                    <option value="week">Week</option>
+                    <option value="month">Month</option>
                 </select>
             </div>
             
             <div class="control-group">
-                <label for="amount">Candles:</label>
-                <input type="number" id="amount" value="100" min="10" max="1000" placeholder="Number of candles">
+                <label for="limit">Candles:</label>
+                <input type="number" id="limit" value="100" min="10" max="1000" placeholder="Number of candles">
             </div>
             
             <button id="load-chart" class="load-button">Load Chart</button>
@@ -174,7 +179,7 @@
         <div class="info">
             <p><strong>Data Source:</strong> Polygon.io API</p>
             <p><strong>Current Symbol:</strong> <span id="current-symbol">GOOGL</span></p>
-            <p><strong>Current Timeframe:</strong> <span id="current-timeframe">1D</span></p>
+            <p><strong>Current Timespan:</strong> <span id="current-timespan">Day</span></p>
             <p><strong>Chart Library:</strong> <a href="https://github.com/tradingview/lightweight-charts" target="_blank" style="color: #4fc3f7;">TradingView Lightweight Charts</a></p>
         </div>
     </div>
