@@ -4,12 +4,12 @@ import { getCandles } from '../services/candles.js'
 const router = Router()
 
 router.get('/', async (req, res) => {
-  const { symbol = 'GOOGL', timeframe = '1D', amount = 100, hydrate, from, to } = req.query
+  const { symbol = 'GOOGL', range = 1, timespan = 'day', limit = 100, hydrate, from, to } = req.query
   
   try {
-    console.log(`Fetching ${symbol} data (${timeframe}, ${amount} candles)...`)
+    console.log(`Fetching ${symbol} data...`)
     
-    const data = await getCandles({ symbol, timeframe, amount, hydrate, from, to })
+    const data = await getCandles({ symbol, range, timespan, limit, hydrate, from, to })
 
     console.log(`Loaded ${data.length} candles for ${symbol}`)
     res.json(data)
