@@ -37,7 +37,7 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         const chartElement = document.getElementById('chart');
         chart = LightweightCharts.createChart(chartElement, {
             width: chartElement.clientWidth,
-            height: 600,
+            height: 500,
             layout: {
                 background: { color: '#2d2d2d' },
                 textColor: '#d1d4dc',
@@ -61,7 +61,7 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
             borderVisible: false,
             wickUpColor: '#26a69a',
             wickDownColor: '#ef5350',
-        });
+        }, 0);
 
         // Pane 1 for Volume
         const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
@@ -73,14 +73,6 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         const adxSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2, title: 'ADX' }, 2);
         const pdiSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#26a69a', lineWidth: 2, title: '+DI' }, 2);
         const ndiSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#ef5350', lineWidth: 2, title: '-DI' }, 2);
-        
-        // Set pane heights
-        const mainPane = chart.panes()[0];
-        const volumePane = chart.panes()[1];
-        const dmiPane = chart.panes()[2];
-        mainPane.setHeight(350);
-        volumePane.setHeight(100);
-        dmiPane.setHeight(150);
 
         const chartData = candles.map(candle => ({
             time: candle.date.split('T')[0],
