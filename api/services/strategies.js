@@ -19,9 +19,15 @@ function calculateStrategy(candles, strategyId) {
         throw new Error(`Strategy with id ${strategyId} not found`);
     }
 
-    const result = strategy.process(candles);
+    const results = [];
 
-    return new StrategyResultDetail(strategy.id, strategy.name, strategy.description, result);
+    for (let i = 0; i < candles.length; i++) {
+        const subCandles = candles.slice(0, i+1);
+        const result = strategy.process(subCandles);
+        results.push(result);
+    }
+
+    return new StrategyResultDetail(strategy.id, strategy.name, strategy.description, results);
 }
 
 export {

@@ -1,6 +1,6 @@
 import Strategy from './Strategy.js';
-import StrategyResult from './StrategyResult.js';
-import Operation from './Operation.js';
+import StrategyResult from '../models/strategies/StrategyResult.js';
+import Operation from '../models/strategies/Operation.js';
 
 class StandardDMIStrategy extends Strategy {
     adxStrengthThreshold = 20;
@@ -26,14 +26,14 @@ class StandardDMIStrategy extends Strategy {
         const previousCandle = candles[candles.length - 2];
 
         if (!lastCandle || !previousCandle || !lastCandle.indicators.dmi || !previousCandle.indicators.dmi) {
-            return new StrategyResult(Operation.HOLD);
+            return new StrategyResult(Operation.ERROR);
         }
 
         const { adx: lastAdx, di_positive: lastDiPositive, di_negative: lastDiNegative } = lastCandle.indicators.dmi;
         const { di_positive: prevDiPositive, di_negative: prevDiNegative } = previousCandle.indicators.dmi;
 
         if (lastAdx === null || lastDiPositive === null || lastDiNegative === null || prevDiPositive === null || prevDiNegative === null) {
-            return new StrategyResult(Operation.HOLD);
+            return new StrategyResult(Operation.ERROR);
         }
 
         const adxStrength = lastAdx > this.adxStrengthThreshold;

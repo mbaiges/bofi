@@ -1,4 +1,5 @@
 const Operation = {
+    ERROR: 'ERROR',
     BUY: 'BUY',
     SELL: 'SELL',
     HOLD: 'HOLD',
@@ -6,4 +7,4 @@ const Operation = {
 
 Object.freeze(Operation);
 
-module.exports = Operation;
+export default Operation;
