@@ -23,7 +23,8 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const candles = await response.json();
+        const responseData = await response.json();
+        const candles = responseData.candles;
         
         if (!candles || candles.length === 0) {
             throw new Error('No data received');
