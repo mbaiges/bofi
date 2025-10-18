@@ -1,5 +1,48 @@
 let chart = null;
 
+function processStrategyData(candles) {
+    const buyData = [];
+    const sellData = [];
+    
+    candles.forEach(candle => {
+        const time = candle.date.split('T')[0];
+        let buyCount = 0;
+        let sellCount = 0;
+        
+        // Process each strategy result
+        if (candle.strategiesResults) {
+            Object.values(candle.strategiesResults).forEach(strategyResult => {
+                if (strategyResult && strategyResult.recommendedOperation) {
+                    switch (strategyResult.recommendedOperation) {
+                        case 'BUY':
+                            buyCount++;
+                            break;
+                        case 'SELL':
+                            sellCount++;
+                            break;
+                        // HOLD and ERROR are ignored (0 value)
+                    }
+                }
+            });
+        }
+        
+        // Add data points for all time periods (including 0 values)
+        buyData.push({
+            time: time,
+            value: buyCount,
+            color: 'rgba(38, 166, 154, 0.8)'
+        });
+        
+        sellData.push({
+            time: time,
+            value: -sellCount, // Negative value for sell signals
+            color: 'rgba(239, 83, 80, 0.8)'
+        });
+    });
+    
+    return { buyData, sellData };
+}
+
 async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 100, from, to) {
     try {
         document.getElementById('loading').style.display = 'block';
@@ -75,6 +118,18 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         const pdiSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#26a69a', lineWidth: 2, title: '+DI' }, 2);
         const ndiSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#ef5350', lineWidth: 2, title: '-DI' }, 2);
 
+        // Pane 3 for Strategy Signals
+        const buySignalsSeries = chart.addSeries(LightweightCharts.HistogramSeries, { 
+            color: '#26a69a', 
+            priceFormat: { type: 'volume' },
+            title: 'Buy Signals'
+        }, 3);
+        const sellSignalsSeries = chart.addSeries(LightweightCharts.HistogramSeries, { 
+            color: '#ef5350', 
+            priceFormat: { type: 'volume' },
+            title: 'Sell Signals'
+        }, 3);
+
         const chartData = candles.map(candle => ({
             time: candle.date.split('T')[0],
             open: candle.open,
@@ -102,6 +157,11 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         adxSeries.setData(dmiData.map(d => ({ time: d.time, value: d.adx })));
         pdiSeries.setData(dmiData.map(d => ({ time: d.time, value: d.pdi })));
         ndiSeries.setData(dmiData.map(d => ({ time: d.time, value: d.ndi })));
+
+        // Process and set strategy signals data
+        const strategyData = processStrategyData(candles);
+        buySignalsSeries.setData(strategyData.buyData);
+        sellSignalsSeries.setData(strategyData.sellData);
 
         chart.timeScale().fitContent();
         
