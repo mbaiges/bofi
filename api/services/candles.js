@@ -1,6 +1,7 @@
-import { getCandles as getCandlesFromRepository } from '../repositories/polygon.js'
-import { hydrateWithIndicators, indicators } from '../utils/indicators.js'
-import moment from 'moment'
+import { getCandles as getCandlesFromRepository } from '../repositories/polygon.js';
+import { hydrateWithIndicators, indicators } from './indicators/indicators.js';
+import moment from 'moment';
+import HydratedCandle from '../models/HydratedCandle.js';
 
 const getRequestedPeriods = (from, to, range, timespan) => {
   const fromDate = moment(from)
@@ -54,7 +55,8 @@ export async function getCandles(options) {
     limit: options.limit || 50000,
   }
 
-  const candles = await getCandlesFromRepository(repoOptions)
+  const candlesFromRepo = await getCandlesFromRepository(repoOptions)
+  const candles = candlesFromRepo.map(c => new HydratedCandle(c));
 
   console.log('number of candles', candles.length)
   console.log('candles', candles)

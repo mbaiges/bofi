@@ -2,7 +2,8 @@ import express from 'express'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
-import apiRouter from './routes/index.js'
+// import apiRouter from './routes/index.js'
+import candlesRouter from './routes/candles.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -18,7 +19,7 @@ const PORT = 3000
 app.use(express.static(path.join(__dirname, '../frontend/public')))
 
 // API routes
-app.use('/api/candles', apiRouter)
+app.use('/api/candles', candlesRouter)
 
 // Start server
 app.listen(PORT, () => {
