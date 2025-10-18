@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+Always use ESM import and export modules. Never use "module.exports = StrategyResult;" or similar. 

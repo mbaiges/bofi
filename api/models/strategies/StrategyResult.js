@@ -1,5 +1,3 @@
-const Operation = require("./Operation");
-
 class StrategyResult {
     /**
      * @param {string} recommendedOperation 
@@ -9,4 +7,4 @@ class StrategyResult {
     }
 }
 
-module.exports = StrategyResult;
+export default StrategyResult;

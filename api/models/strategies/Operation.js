@@ -1,7 +1,7 @@
 const Operation = {
-    BUY: 'Buy',
-    SELL: 'Sell',
-    HOLD: 'Hold',
+    BUY: 'BUY',
+    SELL: 'SELL',
+    HOLD: 'HOLD',
 }
 
 Object.freeze(Operation);

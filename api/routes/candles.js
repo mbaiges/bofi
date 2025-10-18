@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { getCandles } from '../services/candles.js'
+import { calculateStrategy } from '../services/strategies.js'
 
 const router = Router()
 
@@ -11,8 +12,13 @@ router.get('/', async (req, res) => {
     
     const data = await getCandles({ symbol, range, timespan, limit, hydrate, from, to })
 
+    const strategyResult = calculateStrategy(data, 'standard-dmi')
+
     console.log(`Loaded ${data.length} candles for ${symbol}`)
-    res.json(data)
+    res.json({
+      candles: data,
+      strategyResult: strategyResult
+    })
   } catch (error) {
     console.error('Error fetching data:', error)
     res.status(500).json({ error: error.message })
