@@ -30,15 +30,16 @@ class StandardDMIStrategy extends Strategy {
         }
 
         const { adx: lastAdx, di_positive: lastDiPositive, di_negative: lastDiNegative } = lastCandle.indicators.dmi;
-        const { di_positive: prevDiPositive, di_negative: prevDiNegative } = previousCandle.indicators.dmi;
+        const {  adx: prevAdx, di_positive: prevDiPositive, di_negative: prevDiNegative } = previousCandle.indicators.dmi;
 
-        if (lastAdx === null || lastDiPositive === null || lastDiNegative === null || prevDiPositive === null || prevDiNegative === null) {
+        if (lastAdx === null || lastDiPositive === null || lastDiNegative === null || prevDiPositive === null || prevDiNegative === null || prevAdx === null) {
             return new StrategyResult(Operation.ERROR);
         }
 
         const adxStrength = lastAdx > this.adxStrengthThreshold;
-        const buySignal = prevDiPositive < prevDiNegative && lastDiPositive > lastDiNegative;
-        const sellSignal = prevDiPositive > prevDiNegative && lastDiPositive < lastDiNegative;
+        const adxConfirmation = lastAdx >= prevAdx;
+        const buySignal = prevDiPositive < prevDiNegative && lastDiPositive > lastDiNegative && adxConfirmation;
+        const sellSignal = prevDiPositive > prevDiNegative && lastDiPositive < lastDiNegative && adxConfirmation;
 
         if (adxStrength && buySignal) {
             return new StrategyResult(Operation.BUY);
