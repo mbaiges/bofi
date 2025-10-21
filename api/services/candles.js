@@ -29,7 +29,7 @@ export async function getCandles(options) {
     if (from && to) {
       const requestedPeriods = getRequestedPeriods(from, to, range, timespan)
       console.log('requestedPeriods', requestedPeriods)
-      totalPeriodsToFetch = 2 * calculateRequiredPeriods(requestedPeriods, indicators)
+      totalPeriodsToFetch = 10 * calculateRequiredPeriods(requestedPeriods, indicators)
       repoFrom = calculateFromDate(to, totalPeriodsToFetch, range, timespan)
     } else {
       totalPeriodsToFetch = 2 * calculateRequiredPeriods(limit, indicators)
