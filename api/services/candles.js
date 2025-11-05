@@ -21,6 +21,9 @@ const calculateFromDate = (to, totalPeriods, range, timespan) => {
 export async function getCandles(options) {
   const { symbol, hydrate, from, to, limit = 100, range = 1, timespan = 'day' } = options
 
+  // Always fetch from 2023-01-01 or earlier if requested date is earlier
+  const MIN_FETCH_DATE = '2023-01-01'
+
   let repoFrom = from
   let repoTo = to
   let totalPeriodsToFetch
@@ -37,9 +40,27 @@ export async function getCandles(options) {
       repoFrom = calculateFromDate(repoTo, totalPeriodsToFetch, range, timespan)
     }
   } else {
-    repoFrom = from
+    // For non-hydrated requests, use the requested dates
+    repoFrom = from || MIN_FETCH_DATE
     repoTo = to
-    totalPeriodsToFetch = getRequestedPeriods(from, to, range, timespan)
+    totalPeriodsToFetch = from && to ? getRequestedPeriods(from, to, range, timespan) : limit
+  }
+
+  // Ensure we always fetch from at least 2023-01-01 (or earlier if requested)
+  if (repoFrom) {
+    const requestedFromDate = from ? moment(from) : null
+    const minFetchMoment = moment(MIN_FETCH_DATE)
+    const calculatedFromMoment = moment(repoFrom)
+    
+    // Use the earliest date: 2023-01-01, calculated from date, or requested from date
+    const earliestDate = moment.min(
+      minFetchMoment,
+      calculatedFromMoment,
+      ...(requestedFromDate ? [requestedFromDate] : [])
+    )
+    repoFrom = earliestDate.format('YYYY-MM-DD')
+  } else {
+    repoFrom = MIN_FETCH_DATE
   }
 
   console.log('repoFrom', repoFrom)
