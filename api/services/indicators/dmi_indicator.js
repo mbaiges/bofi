@@ -24,8 +24,8 @@ class DMIIndicator extends Indicator {
                     ...c.indicators,
                     dmi: new DMIIndicatorResult({
                         adx: null,
-                        di_positive: null,
-                        di_negative: null,
+                        diPositive: null,
+                        diNegative: null,
                     })
                 }
             }))
@@ -51,8 +51,8 @@ class DMIIndicator extends Indicator {
                     ...candlesWithDMI[i].indicators,
                     dmi: new DMIIndicatorResult({
                         adx: indicatorData.adx,
-                        di_positive: indicatorData.pdi,
-                        di_negative: indicatorData.mdi
+                        diPositive: indicatorData.pdi,
+                        diNegative: indicatorData.mdi
                     })
                 }
                 adxResultIndex++
@@ -61,8 +61,8 @@ class DMIIndicator extends Indicator {
                     ...candlesWithDMI[i].indicators,
                     dmi: new DMIIndicatorResult({
                         adx: null,
-                        di_positive: null,
-                        di_negative: null
+                        diPositive: null,
+                        diNegative: null
                     })
                 }
             }

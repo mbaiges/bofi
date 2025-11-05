@@ -14,16 +14,16 @@ function processStrategyDataByStrategy(candles, strategiesDetails) {
         const time = candle.date.split('T')[0];
         
         // Process each strategy result
-        if (candle.strategiesResults) {
-            Object.keys(candle.strategiesResults).forEach(strategyId => {
-                const strategyResult = candle.strategiesResults[strategyId];
+        if (candle.strategies_results) {
+            Object.keys(candle.strategies_results).forEach(strategyId => {
+                const strategyResult = candle.strategies_results[strategyId];
                 const strategyInfo = strategiesDetails ? strategiesDetails[strategyId] : null;
                 
                 let signalValue = 0;
                 let tooltipText = '';
                 
-                if (strategyResult && strategyResult.recommendedOperation) {
-                    switch (strategyResult.recommendedOperation) {
+                if (strategyResult && strategyResult.recommended_operation) {
+                    switch (strategyResult.recommended_operation) {
                         case 'BUY':
                             signalValue = 1;
                             tooltipText = strategyInfo ? `${strategyInfo.name}: BUY\n${strategyInfo.description}` : 'BUY';
@@ -52,7 +52,7 @@ function processStrategyDataByStrategy(candles, strategiesDetails) {
                         strategyId: strategyId,
                         strategyName: strategyInfo ? strategyInfo.name : strategyId,
                         strategyDescription: strategyInfo ? strategyInfo.description : '',
-                        operation: strategyResult ? strategyResult.recommendedOperation : 'UNKNOWN',
+                        operation: strategyResult ? strategyResult.recommended_operation : 'UNKNOWN',
                         tooltipText: tooltipText
                     }
                 });
@@ -148,7 +148,7 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         
         const responseData = await response.json();
         const candles = responseData.candles;
-        const strategiesDetails = responseData.strategiesDetails;
+        const strategiesDetails = responseData.strategies_details;
         
         if (!candles || candles.length === 0) {
             throw new Error('No data received');

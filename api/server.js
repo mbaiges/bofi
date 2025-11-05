@@ -2,6 +2,8 @@ import express from 'express'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
+import { snakeCaseResponse } from './middleware/snakeCaseResponse.js'
+import { camelCaseRequest } from './middleware/camelCaseRequest.js'
 // import apiRouter from './routes/index.js'
 import candlesRouter from './routes/candles.js'
 import backtestingRouter from './routes/backtesting.js'
@@ -14,7 +16,12 @@ dotenv.config({ path: path.resolve(__dirname, 'config/.env') })
 
 const app = express()
 app.disable('etag');
+
+// Middlewares
 app.use(express.json());
+app.use(camelCaseRequest); // Converts request body to camelCase
+app.use(snakeCaseResponse); // Converts response body to snake_case
+
 const PORT = 3000
 
 // Serve static files from frontend

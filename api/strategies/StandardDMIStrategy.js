@@ -29,8 +29,8 @@ class StandardDMIStrategy extends Strategy {
             return new StrategyResult(Operation.ERROR);
         }
 
-        const { adx: lastAdx, di_positive: lastDiPositive, di_negative: lastDiNegative } = lastCandle.indicators.dmi;
-        const { di_positive: prevDiPositive, di_negative: prevDiNegative } = previousCandle.indicators.dmi;
+        const { adx: lastAdx, diPositive: lastDiPositive, diNegative: lastDiNegative } = lastCandle.indicators.dmi;
+        const { diPositive: prevDiPositive, diNegative: prevDiNegative } = previousCandle.indicators.dmi;
 
         if (lastAdx === null || lastDiPositive === null || lastDiNegative === null || prevDiPositive === null || prevDiNegative === null) {
             return new StrategyResult(Operation.ERROR);

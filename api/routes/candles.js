@@ -12,6 +12,8 @@ router.get('/', async (req, res) => {
     
     const data = await getCandles({ symbol, range, timespan, limit, hydrate, from, to })
 
+    console.log(JSON.stringify(data[data.length - 1], null, 2));
+
     const dmiStrategyResult = calculateStrategy(data, 'standard-dmi')
 
     // Hydrate the candles with the strategy results
