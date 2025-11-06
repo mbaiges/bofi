@@ -63,44 +63,50 @@ router.post('/', async (req, res) => {
         // Run main strategy
         const stratResult = strategyInst.process(candles.slice(0, i + 1));
         // Out strategy: SKIP for now -- demo can be added as extension
-        // Simulate trade logic (dumb demo) -- replace with portfolio logic
-        if (!inPosition && stratResult.recommendedOperation === 'BUY' && cash > 0) {
-          const entryPriceCandle = c.open;
-          let nominalsToBuy = cash / (entryPriceCandle * (1 + feePct));
+        // Simulate trade logic using previous day's signal (confirmed signal)
+        // Skip trading on first day (i=0) since there's no previous day
+        if (i > 0) {
+          const previousStratResult = tradingCandles[i - 1]?.strategyResult;
+          if (previousStratResult) {
+            if (!inPosition && previousStratResult.recommendedOperation === 'BUY' && cash > 0) {
+              const entryPriceCandle = c.open;
+              let nominalsToBuy = cash / (entryPriceCandle * (1 + feePct));
 
-          if (settings.truncateNominals) {
-            nominalsToBuy = Math.floor(nominalsToBuy);
-          }
+              if (settings.truncateNominals) {
+                nominalsToBuy = Math.floor(nominalsToBuy);
+              }
 
-          if (nominalsToBuy > 0) {
-            inPosition = true;
-            entryPrice = entryPriceCandle;
-            entryIndex = i;
-            currentNominals = nominalsToBuy;
-            const cost = currentNominals * entryPrice;
-            entryFees = cost * feePct;
-            totalFees += entryFees;
-            cash -= (cost + entryFees);
+              if (nominalsToBuy > 0) {
+                inPosition = true;
+                entryPrice = entryPriceCandle;
+                entryIndex = i;
+                currentNominals = nominalsToBuy;
+                const cost = currentNominals * entryPrice;
+                entryFees = cost * feePct;
+                totalFees += entryFees;
+                cash -= (cost + entryFees);
+              }
+            } else if (inPosition && previousStratResult.recommendedOperation === 'SELL') {
+              inPosition = false;
+              const exitPrice = c.open;
+              const gross = (exitPrice - entryPrice) * currentNominals;
+              const thisFee = exitPrice * currentNominals * feePct;
+              totalFees += thisFee;
+              const net = gross - entryFees - thisFee;
+              if (net >= 0) {
+                totalWins += net;
+                winTrades++;
+              } else {
+                totalLosses += net;
+                lossTrades++;
+              }
+              cash += (currentNominals * exitPrice) - thisFee;
+              currentNominals = 0;
+              entryPrice = null;
+              entryIndex = null;
+              entryFees = 0;
+            }
           }
-        } else if (inPosition && stratResult.recommendedOperation === 'SELL') {
-          inPosition = false;
-          const exitPrice = c.open;
-          const gross = (exitPrice - entryPrice) * currentNominals;
-          const thisFee = exitPrice * currentNominals * feePct;
-          totalFees += thisFee;
-          const net = gross - entryFees - thisFee;
-          if (net >= 0) {
-            totalWins += net;
-            winTrades++;
-          } else {
-            totalLosses += net;
-            lossTrades++;
-          }
-          cash += (currentNominals * exitPrice) - thisFee;
-          currentNominals = 0;
-          entryPrice = null;
-          entryIndex = null;
-          entryFees = 0;
         }
         // Final balance (if not in trade will be just cash, otherwise mark-to-market)
         const calculatedBalance = cash + (currentNominals ? currentNominals * c.close : 0);
