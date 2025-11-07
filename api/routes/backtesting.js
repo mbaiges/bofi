@@ -2,18 +2,33 @@ import { Router } from 'express';
 import { getCandles } from '../services/candles.js';
 import HydratedCandle from '../models/HydratedCandle.js';
 import StandardDMIStrategy from '../strategies/StandardDMIStrategy.js';
+import TakeProfitExit from '../strategies/TakeProfitExit.js';
 // Other strategy imports as needed
 
 const router = Router();
 
 /**
- * Helper to dynamically instantiate a strategy by id/config
+ * Helper to dynamically instantiate a trading strategy by id/config
+ * Trading strategies determine when to BUY/SELL/HOLD based on market indicators
  */
 function getStrategyInstance(id, config) {
   if (id === 'StandardDMIStrategy' || id === 'standard-dmi') {
     return new StandardDMIStrategy(config.paramA ?? 20);
   }
-  throw new Error('Unknown strategy id: ' + id);
+  throw new Error('Unknown trading strategy id: ' + id);
+}
+
+/**
+ * Helper to dynamically instantiate an exit strategy (out_strategy) by id/config
+ * Exit strategies determine when to exit a position based on price movements (e.g., take profit, stop loss)
+ * These are separate from trading strategies and work differently
+ */
+function getExitStrategyInstance(id, config) {
+  if (id === 'TakeProfitExit' || id === 'take-profit-exit') {
+    const pct = config.pct ?? 0.1;
+    return new TakeProfitExit(pct);
+  }
+  throw new Error('Unknown exit strategy (out_strategy) id: ' + id);
 }
 
 router.post('/', async (req, res) => {
@@ -30,6 +45,8 @@ router.post('/', async (req, res) => {
     const range = settings.range || 1;
     const feePct = Number(settings.fee) || 0;
 
+
+    console.log('--------------------------------');
     const tradingsResults = [];
     for (const trading of tradings) {
       const {
@@ -44,8 +61,10 @@ router.post('/', async (req, res) => {
         tradingsResults.push({ error: `No candles for ticker ${ticker}` });
         continue;
       }
-      // Prepare strategy instance
+      // Prepare trading strategy instance (determines BUY/SELL signals)
       const strategyInst = getStrategyInstance(strategy.id, strategy.config);
+      // Prepare exit strategy instance (out_strategy) if provided (determines when to exit positions)
+      const exitStrategyInst = outStrategy ? getExitStrategyInstance(outStrategy.id, outStrategy.config) : null;
       // Main simulation vars:
       let inPosition = false;
       let entryPrice = null, entryIndex = null, entryFees = 0;
@@ -60,14 +79,14 @@ router.post('/', async (req, res) => {
       // Simulation over candles
       for (let i = 0; i < candles.length; i++) {
         const c = candles[i];
-        // Run main strategy
+        // Run trading strategy (determines BUY/SELL/HOLD signals)
         const stratResult = strategyInst.process(candles.slice(0, i + 1));
-        // Out strategy: SKIP for now -- demo can be added as extension
         // Simulate trade logic using previous day's signal (confirmed signal)
         // Skip trading on first day (i=0) since there's no previous day
         if (i > 0) {
           const previousStratResult = tradingCandles[i - 1]?.strategyResult;
           if (previousStratResult) {
+            // Entry logic: buy based on previous day's BUY signal from trading strategy
             if (!inPosition && previousStratResult.recommendedOperation === 'BUY' && cash > 0) {
               const entryPriceCandle = c.open;
               let nominalsToBuy = cash / (entryPriceCandle * (1 + feePct));
@@ -84,28 +103,59 @@ router.post('/', async (req, res) => {
                 const cost = currentNominals * entryPrice;
                 entryFees = cost * feePct;
                 totalFees += entryFees;
-                cash -= (cost + entryFees);
+                if (settings.truncateNominals) {
+                  cash -= (cost + entryFees);
+                } else {
+                  cash = 0;
+                }
+                console.log('Bought at', entryPrice, 'on', c.date);
               }
-            } else if (inPosition && previousStratResult.recommendedOperation === 'SELL') {
-              inPosition = false;
-              const exitPrice = c.open;
-              const gross = (exitPrice - entryPrice) * currentNominals;
-              const thisFee = exitPrice * currentNominals * feePct;
-              totalFees += thisFee;
-              const net = gross - entryFees - thisFee;
-              if (net >= 0) {
-                totalWins += net;
-                winTrades++;
-              } else {
-                totalLosses += net;
-                lossTrades++;
-              }
-              cash += (currentNominals * exitPrice) - thisFee;
-              currentNominals = 0;
-              entryPrice = null;
-              entryIndex = null;
-              entryFees = 0;
             }
+          }
+        }
+
+        // Exit logic: check exit strategy (out_strategy) if in position
+        // Exit strategies are separate from trading strategies and determine when to exit based on price movements
+        if (inPosition && entryPrice) {
+          let shouldExitByExitStrategy = false;
+          let shouldExitByStrategy = false;
+          
+          // First, check exit strategy (out_strategy) if provided
+          // Exit strategies work differently - they check price-based conditions (take profit, stop loss, etc.)
+          if (exitStrategyInst) {
+            // Check if exit threshold is met using current candle's close price
+            shouldExitByExitStrategy = exitStrategyInst.shouldExit(entryPrice, c.low, c);
+          }
+          
+          // If no exit strategy or exit strategy didn't trigger, fall back to trading strategy's SELL signal
+          if (!shouldExitByExitStrategy && i > 0) {
+            const previousStratResult = tradingCandles[i - 1]?.strategyResult;
+            if (previousStratResult && previousStratResult.recommendedOperation === 'SELL') {
+              shouldExitByStrategy = true;
+            }
+          }
+
+          const exitPrice = shouldExitByExitStrategy ? exitStrategyInst.getExitPrice(entryPrice) : c.open;
+
+          if (shouldExitByExitStrategy || shouldExitByStrategy) {
+            console.log('Sold at', exitPrice, 'on', c.date);
+            inPosition = false;
+            const gross = (exitPrice - entryPrice) * currentNominals;
+            const thisFee = exitPrice * currentNominals * feePct;
+            totalFees += thisFee;
+            const net = gross - entryFees - thisFee;
+            if (net >= 0) {
+              totalWins += net;
+              winTrades++;
+            } else {
+              totalLosses += net;
+              lossTrades++;
+            }
+            cash += (currentNominals * exitPrice) - thisFee;
+            currentNominals = 0;
+            entryPrice = null;
+            entryIndex = null;
+            entryFees = 0;
           }
         }
         // Final balance (if not in trade will be just cash, otherwise mark-to-market)

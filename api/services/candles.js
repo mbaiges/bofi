@@ -31,7 +31,6 @@ export async function getCandles(options) {
   if (hydrate) {
     if (from && to) {
       const requestedPeriods = getRequestedPeriods(from, to, range, timespan)
-      console.log('requestedPeriods', requestedPeriods)
       totalPeriodsToFetch = 10 * calculateRequiredPeriods(requestedPeriods, indicators)
       repoFrom = calculateFromDate(to, totalPeriodsToFetch, range, timespan)
     } else {
@@ -63,10 +62,6 @@ export async function getCandles(options) {
     repoFrom = MIN_FETCH_DATE
   }
 
-  console.log('repoFrom', repoFrom)
-  console.log('repoTo', repoTo)
-  console.log('totalPeriodsToFetch', totalPeriodsToFetch)
-
   const repoOptions = {
     ticker: symbol,
     from: repoFrom,
@@ -78,17 +73,12 @@ export async function getCandles(options) {
 
   const candlesFromRepo = await getCandlesFromRepository(repoOptions)
   const candles = candlesFromRepo.map(c => new HydratedCandle(c));
-
-  console.log('number of candles', candles.length)
-  console.log('candles', candles)
   
   let data = candles || []
   
   if (hydrate) {
     data = hydrateWithIndicators(data)
   }
-
-  console.log('data', data)
 
   if (from) {
     const fromTimestamp = Math.floor(new Date(from).getTime() / 1000)
@@ -97,8 +87,6 @@ export async function getCandles(options) {
   } else {
     data = data.slice(-limit)
   }
-
-  console.log('--------------------------------')
 
   return data
 }
