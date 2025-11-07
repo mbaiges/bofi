@@ -17,10 +17,10 @@ class TakeProfitExitStrategy extends ExitStrategy {
     /**
      * @param {number} entryPrice - The price at which the position was entered
      * @param {number} currentPrice - The current price of the asset
-     * @param {any} candle - The current candle data
+     * @param {any[]} candles - The historic candle data
      * @returns {boolean} - Returns true if the position should be exited
      */
-    shouldExit(entryPrice, currentPrice, candle) {
+    shouldExit(entryPrice, currentPrice, candles) {
         if (!entryPrice || !currentPrice) {
             return false;
         }
@@ -40,7 +40,13 @@ class TakeProfitExitStrategy extends ExitStrategy {
         return false;
     }
 
-    getExitPrice(entryPrice) {
+    /**
+     * @param {number} entryPrice - The price at which the position was entered
+     * @param {number} currentPrice - The current price of the asset
+     * @param {any[]} candles - The historic candle data
+     * @returns {number}
+     */
+    calculateExitPrice(entryPrice, currentPrice, candles) {
         return entryPrice * (1 + this.pct);
     }
 }

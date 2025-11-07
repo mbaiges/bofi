@@ -20,11 +20,21 @@ class ExitStrategy {
     /**
      * @param {number} entryPrice - The price at which the position was entered
      * @param {number} currentPrice - The current price of the asset
-     * @param {any} candle - The current candle data (for additional context if needed)
+     * @param {any[]} candles - The historic candle data
      * @returns {boolean} - Returns true if the position should be exited
      */
-    shouldExit(entryPrice, currentPrice, candle) {
+    shouldExit(entryPrice, currentPrice, candles) {
         throw new Error("Method 'shouldExit()' must be implemented.");
+    }
+
+    /**
+     * @param {number} entryPrice - The price at which the position was entered
+     * @param {number} currentPrice - The current price of the asset
+     * @param {any[]} candles - The historic candle data
+     * @returns {number} - Returns the calculated exit price
+     */
+    calculateExitPrice(entryPrice, currentPrice, candles) {
+        throw new Error("Method 'calculateExitPrice()' must be implemented.");
     }
 }
 
