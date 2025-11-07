@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getCandles } from '../services/candles.js';
 import HydratedCandle from '../models/HydratedCandle.js';
 import StandardDMIStrategy from '../strategies/StandardDMIStrategy.js';
-import TakeProfitExit from '../strategies/TakeProfitExit.js';
+import TakeProfitExitStrategy from '../exit_strategies/TakeProfitExitStrategy.js';
 // Other strategy imports as needed
 
 const router = Router();
@@ -24,9 +24,9 @@ function getStrategyInstance(id, config) {
  * These are separate from trading strategies and work differently
  */
 function getExitStrategyInstance(id, config) {
-  if (id === 'TakeProfitExit' || id === 'take-profit-exit') {
+  if (id === 'TakeProfitExit' || id === 'TakeProfitExitStrategy' || id === 'take-profit-exit') {
     const pct = config.pct ?? 0.1;
-    return new TakeProfitExit(pct);
+    return new TakeProfitExitStrategy(pct);
   }
   throw new Error('Unknown exit strategy (out_strategy) id: ' + id);
 }

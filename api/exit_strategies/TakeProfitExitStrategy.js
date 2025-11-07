@@ -1,6 +1,6 @@
 import ExitStrategy from './ExitStrategy.js';
 
-class TakeProfitExit extends ExitStrategy {
+class TakeProfitExitStrategy extends ExitStrategy {
     pct = 0.1; // Percentage threshold: positive for take profit, negative for stop loss
 
     constructor(pct = 0.1) {
@@ -45,5 +45,5 @@ class TakeProfitExit extends ExitStrategy {
     }
 }
 
-export default TakeProfitExit;
+export default TakeProfitExitStrategy;
 
