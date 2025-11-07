@@ -44,7 +44,11 @@ router.post('/', async (req, res) => {
     const timespan = settings.timespan || 'day';
     const range = settings.range || 1;
     const feePct = Number(settings.fee) || 0;
-
+    // Parse entry_time setting (case-insensitive): 'day' or 'next_day'
+    const entryTime = settings.entryTime ? settings.entryTime.toLowerCase() : 'day';
+    if (entryTime !== 'day' && entryTime !== 'next_day') {
+      return res.status(400).json({ error: 'Invalid entryTime: must be "day" or "next_day"' });
+    }
 
     console.log('--------------------------------');
     const tradingsResults = [];
@@ -81,35 +85,49 @@ router.post('/', async (req, res) => {
         const c = candles[i];
         // Run trading strategy (determines BUY/SELL/HOLD signals)
         const stratResult = strategyInst.process(candles.slice(0, i + 1));
-        // Simulate trade logic using previous day's signal (confirmed signal)
-        // Skip trading on first day (i=0) since there's no previous day
-        if (i > 0) {
-          const previousStratResult = tradingCandles[i - 1]?.strategyResult;
-          if (previousStratResult) {
-            // Entry logic: buy based on previous day's BUY signal from trading strategy
-            if (!inPosition && previousStratResult.recommendedOperation === 'BUY' && cash > 0) {
-              const entryPriceCandle = c.open;
-              let nominalsToBuy = cash / (entryPriceCandle * (1 + feePct));
+        
+        // Entry logic: buy based on entry_time setting
+        if (!inPosition && stratResult.recommendedOperation === 'BUY' && cash > 0) {
+          let entryPriceCandle;
+          let entryCandleIndex;
+          
+          if (entryTime === 'day') {
+            // Buy at close price on the same day the signal is generated
+            entryPriceCandle = c.close;
+            entryCandleIndex = i;
+          } else if (entryTime === 'next_day') {
+            // Buy at open price on the next day (skip if this is the last candle)
+            if (i < candles.length - 1) {
+              entryPriceCandle = candles[i + 1].open;
+              entryCandleIndex = i + 1;
+            } else {
+              // Can't buy on next day if this is the last candle
+              entryPriceCandle = null;
+            }
+          }
+          
+          if (entryPriceCandle) {
+            let nominalsToBuy = cash / (entryPriceCandle * (1 + feePct));
 
+            if (settings.truncateNominals) {
+              nominalsToBuy = Math.floor(nominalsToBuy);
+            }
+
+            if (nominalsToBuy > 0) {
+              inPosition = true;
+              entryPrice = entryPriceCandle;
+              entryIndex = entryCandleIndex;
+              currentNominals = nominalsToBuy;
+              const cost = currentNominals * entryPrice;
+              entryFees = cost * feePct;
+              totalFees += entryFees;
               if (settings.truncateNominals) {
-                nominalsToBuy = Math.floor(nominalsToBuy);
+                cash -= (cost + entryFees);
+              } else {
+                cash = 0;
               }
-
-              if (nominalsToBuy > 0) {
-                inPosition = true;
-                entryPrice = entryPriceCandle;
-                entryIndex = i;
-                currentNominals = nominalsToBuy;
-                const cost = currentNominals * entryPrice;
-                entryFees = cost * feePct;
-                totalFees += entryFees;
-                if (settings.truncateNominals) {
-                  cash -= (cost + entryFees);
-                } else {
-                  cash = 0;
-                }
-                console.log('Bought at', entryPrice, 'on', c.date);
-              }
+              const entryDate = entryTime === 'day' ? c.date : candles[entryCandleIndex].date;
+              console.log('Bought at', entryPrice, 'on', entryDate);
             }
           }
         }
@@ -127,18 +145,41 @@ router.post('/', async (req, res) => {
             shouldExitByExitStrategy = exitStrategyInst.shouldExit(entryPrice, c.low, c);
           }
           
-          // If no exit strategy or exit strategy didn't trigger, fall back to trading strategy's SELL signal
-          if (!shouldExitByExitStrategy && i > 0) {
-            const previousStratResult = tradingCandles[i - 1]?.strategyResult;
-            if (previousStratResult && previousStratResult.recommendedOperation === 'SELL') {
-              shouldExitByStrategy = true;
+          // If no exit strategy or exit strategy didn't trigger, check trading strategy's SELL signal
+          if (!shouldExitByExitStrategy) {
+            if (entryTime === 'day') {
+              // Check SELL signal on same day
+              if (stratResult.recommendedOperation === 'SELL') {
+                shouldExitByStrategy = true;
+              }
+            } else if (entryTime === 'next_day') {
+              // Check previous day's SELL signal (sell on current day at open)
+              if (i > 0) {
+                const previousStratResult = tradingCandles[i - 1]?.strategyResult;
+                if (previousStratResult && previousStratResult.recommendedOperation === 'SELL') {
+                  shouldExitByStrategy = true;
+                }
+              }
             }
           }
 
-          const exitPrice = shouldExitByExitStrategy ? exitStrategyInst.getExitPrice(entryPrice) : c.open;
+          let exitPrice;
+          let exitDate;
+          if (shouldExitByExitStrategy) {
+            exitPrice = exitStrategyInst.getExitPrice(entryPrice);
+            exitDate = c.date;
+          } else if (shouldExitByStrategy) {
+            if (entryTime === 'day') {
+              exitPrice = c.close; // Sell at close price on the same day
+              exitDate = c.date;
+            } else if (entryTime === 'next_day') {
+              exitPrice = c.open; // Sell at open price on the current day (next day after signal)
+              exitDate = c.date;
+            }
+          }
 
           if (shouldExitByExitStrategy || shouldExitByStrategy) {
-            console.log('Sold at', exitPrice, 'on', c.date);
+            console.log('Sold at', exitPrice, 'on', exitDate);
             inPosition = false;
             const gross = (exitPrice - entryPrice) * currentNominals;
             const thisFee = exitPrice * currentNominals * feePct;
