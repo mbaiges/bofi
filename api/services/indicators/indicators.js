@@ -1,7 +1,9 @@
 import DMIIndicator from './dmi_indicator.js';
+import BollingerBandsIndicator from './bb_indicator.js';
 
 export const indicators = [
-  new DMIIndicator(14)
+  new DMIIndicator(14),
+  new BollingerBandsIndicator(20, 2)
 ];
 
 export function hydrateWithIndicators(candles) {

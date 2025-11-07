@@ -5,6 +5,7 @@ import TakeProfitExitStrategy from '../exit_strategies/TakeProfitExitStrategy.js
 import DefaultFullStrategy from '../strategies/DefaultFullStrategy.js';
 import DelayedCompositeStrategy from '../strategies/DelayedCompositeStrategy.js';
 import FullStrategy from '../strategies/FullStrategy.js';
+import StandardBollingerBandsStrategy from '../strategies/StandardBollingerBandsStrategy.js';
 
 const router = Router();
 
@@ -17,6 +18,14 @@ function buildStrategy({ id, config }) {
         case 'take-profit-exit-strategy':
         case 'TakeProfitExitStrategy':
             return new TakeProfitExitStrategy(config.pct);
+
+        case 'standard-bollinger-bands-strategy':
+        case 'StandardBollingerBandsStrategy':
+            return new StandardBollingerBandsStrategy(
+                config.period,
+                config.stdDev,
+                config.adxStrengthThreshold
+            );
 
         case 'default-full-strategy':
         case 'DefaultFullStrategy': {
