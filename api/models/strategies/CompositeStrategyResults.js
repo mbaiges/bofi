@@ -1,4 +1,4 @@
-class CompositeStrategyResult {
+class CompositeStrategyResults {
     /**
      * @param {string} strategyId
      * @param {import('./StrategyResult.js').default[]} strategyResults
@@ -9,4 +9,4 @@ class CompositeStrategyResult {
     }
 }
 
-export default CompositeStrategyResult;
+export default CompositeStrategyResults;

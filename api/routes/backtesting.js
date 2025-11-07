@@ -3,21 +3,51 @@ import { getCandles } from '../services/candles.js';
 import StandardDMIStrategy from '../strategies/StandardDMIStrategy.js';
 import TakeProfitExitStrategy from '../exit_strategies/TakeProfitExitStrategy.js';
 import DefaultFullStrategy from '../strategies/DefaultFullStrategy.js';
+import DelayedCompositeStrategy from '../strategies/DelayedCompositeStrategy.js';
+import FullStrategy from '../strategies/FullStrategy.js';
 
 const router = Router();
 
-function getTradingStrategyInstance(id, config) {
-  if (id === 'StandardDMIStrategy' || id === 'standard-dmi') {
-    return new StandardDMIStrategy(config.paramA ?? 20);
-  }
-  throw new Error('Unknown trading strategy id: ' + id);
-}
+function buildStrategy({ id, config }) {
+    switch (id) {
+        case 'standard-dmi-strategy':
+        case 'StandardDMIStrategy':
+            return new StandardDMIStrategy(config.adxStrengthThreshold);
 
-function getExitStrategyInstance(id, config) {
-  if (id === 'TakeProfitExitStrategy' || id === 'take-profit-exit') {
-    return new TakeProfitExitStrategy(config.pct ?? 0.1);
-  }
-  throw new Error('Unknown exit strategy (out_strategy) id: ' + id);
+        case 'take-profit-exit-strategy':
+        case 'TakeProfitExitStrategy':
+            return new TakeProfitExitStrategy(config.pct);
+
+        case 'default-full-strategy':
+        case 'DefaultFullStrategy': {
+            const tradingStrategy = buildStrategy(config.tradingStrategy);
+            const exitStrategy = buildStrategy(config.exitStrategy);
+            return new DefaultFullStrategy(
+                'default-full-strategy',
+                'Default Full Strategy',
+                'Combines a trading and an exit strategy',
+                tradingStrategy,
+                exitStrategy
+            );
+        }
+
+        case 'delayed-composite-strategy':
+        case 'DelayedCompositeStrategy': {
+            const strategies = config.strategies.map(stratConfig => buildStrategy(stratConfig));
+            return new DelayedCompositeStrategy(
+                'delayed-composite-strategy',
+                'Delayed Composite Strategy',
+                'Aggregates signals from multiple strategies',
+                strategies,
+                config.minSignals,
+                config.delayMin,
+                config.delayMax
+            );
+        }
+
+        default:
+            throw new Error(`Unknown strategy id: ${id}`);
+    }
 }
 
 router.post('/', async (req, res) => {
@@ -53,17 +83,13 @@ router.post('/', async (req, res) => {
         tradingsResults.push({ error: `No candles for ticker ${ticker}` });
         continue;
       }
-      // Prepare trading strategy instance (determines BUY/SELL signals)
-      const tradingStrategyInst = getTradingStrategyInstance(strategy.id, strategy.config);
-      const exitStrategyInst = outStrategy ? getExitStrategyInstance(outStrategy.id, outStrategy.config) : null;
+
+      const strategyInst = buildStrategy(strategy);
+
+      if (!(strategyInst instanceof FullStrategy)) {
+          throw new Error('The top-level strategy for backtesting must be a FullStrategy.');
+      }
       
-      const strategyInst = new DefaultFullStrategy(
-        'full-strategy',
-        'Full Strategy',
-        'Combines a trading and an exit strategy',
-        tradingStrategyInst,
-        exitStrategyInst
-      );
       // Main simulation vars:
       let inPosition = false;
       let entryPrice = null, entryIndex = null, entryFees = 0;
@@ -193,7 +219,7 @@ router.post('/', async (req, res) => {
         bestStrategy = tr.strategyDef;
       }
     }
-    res.json({ tradingsResults, benchmark: { bestRoi, bestStrategy } });
+    res.json({ benchmark: { bestRoi, bestStrategy }, tradingsResults });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

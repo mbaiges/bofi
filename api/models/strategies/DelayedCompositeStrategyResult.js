@@ -3,11 +3,11 @@ import StrategyResult from './StrategyResult.js';
 class DelayedCompositeStrategyResult extends StrategyResult {
     /**
      * @param {string} recommendedOperation
-     * @param {import('./CompositeStrategyResult.js').default[]} compositeStrategyResult
+     * @param {import('./CompositeStrategyResults.js').default[]} compositeStrategiesResults
      */
-    constructor(recommendedOperation, compositeStrategyResult) {
+    constructor(recommendedOperation, compositeStrategiesResults) {
         super(recommendedOperation);
-        this.compositeStrategyResult = compositeStrategyResult;
+        this.compositeStrategiesResults = compositeStrategiesResults;
     }
 }
 

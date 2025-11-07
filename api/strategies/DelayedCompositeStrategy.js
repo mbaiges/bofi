@@ -1,9 +1,9 @@
-import Strategy from './Strategy.js';
+import FullStrategy from './FullStrategy.js';
 import Operation from '../models/strategies/Operation.js';
-import CompositeStrategyResult from '../models/strategies/CompositeStrategyResult.js';
+import CompositeStrategyResults from '../models/strategies/CompositeStrategyResults.js';
 import DelayedCompositeStrategyResult from '../models/strategies/DelayedCompositeStrategyResult.js';
 
-class DelayedCompositeStrategy extends Strategy {
+class DelayedCompositeStrategy extends FullStrategy {
     strategies;
     minSignals;
     delayMin;
@@ -17,7 +17,7 @@ class DelayedCompositeStrategy extends Strategy {
         this.delayMax = delayMax;
     }
 
-    process(candles) {
+    process(candles, inPosition, entryPrice) {
         let totalBuySignals = 0;
         let totalSellSignals = 0;
         const compositeResults = [];
@@ -30,7 +30,11 @@ class DelayedCompositeStrategy extends Strategy {
             const strategyResultsInWindow = [];
             for (let i = startIndex; i <= endIndex; i++) {
                 const candleSubset = candles.slice(0, i + 1);
-                const result = strategy.process(candleSubset);
+                
+                const result = (strategy instanceof FullStrategy)
+                    ? strategy.process(candleSubset, inPosition, entryPrice)
+                    : strategy.process(candleSubset);
+
                 strategyResultsInWindow.push(result);
 
                 if (result.recommendedOperation === Operation.BUY) {
@@ -39,7 +43,7 @@ class DelayedCompositeStrategy extends Strategy {
                     totalSellSignals++;
                 }
             }
-            compositeResults.push(new CompositeStrategyResult(strategy.id, strategyResultsInWindow));
+            compositeResults.push(new CompositeStrategyResults(strategy.id, strategyResultsInWindow));
         }
 
         let recommendedOperation = Operation.HOLD;
