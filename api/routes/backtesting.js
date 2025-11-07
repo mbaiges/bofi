@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getCandles } from '../services/candles.js';
 import StandardDMIStrategy from '../strategies/StandardDMIStrategy.js';
 import TakeProfitExitStrategy from '../exit_strategies/TakeProfitExitStrategy.js';
-import StandardFullStrategy from '../strategies/StandardFullStrategy.js';
+import DefaultFullStrategy from '../strategies/DefaultFullStrategy.js';
 
 const router = Router();
 
@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
       const tradingStrategyInst = getTradingStrategyInstance(strategy.id, strategy.config);
       const exitStrategyInst = outStrategy ? getExitStrategyInstance(outStrategy.id, outStrategy.config) : null;
       
-      const strategyInst = new StandardFullStrategy(
+      const strategyInst = new DefaultFullStrategy(
         'full-strategy',
         'Full Strategy',
         'Combines a trading and an exit strategy',

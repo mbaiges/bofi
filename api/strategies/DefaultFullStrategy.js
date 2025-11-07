@@ -2,7 +2,7 @@ import FullStrategy from './FullStrategy.js';
 import StrategyResult from '../models/strategies/StrategyResult.js';
 import Operation from '../models/strategies/Operation.js';
 
-class StandardFullStrategy extends FullStrategy {
+class DefaultFullStrategy extends FullStrategy {
     tradingStrategy;
     exitStrategy;
 
@@ -38,4 +38,4 @@ class StandardFullStrategy extends FullStrategy {
     }
 }
 
-export default StandardFullStrategy;
+export default DefaultFullStrategy;
