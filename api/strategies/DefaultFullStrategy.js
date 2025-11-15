@@ -3,46 +3,46 @@ import Operation from '../models/strategies/Operation.js';
 import FullStrategyResult from '../models/strategies/FullStrategyResult.js';
 
 class DefaultFullStrategy extends FullStrategy {
-    tradingStrategy;
-    exitStrategy;
+    tradingStrategy;
+    exitStrategy;
 
-    constructor(id, name, description, tradingStrategy, exitStrategy) {
-        super(id, name, description);
-        this.tradingStrategy = tradingStrategy;
-        this.exitStrategy = exitStrategy;
-    }
+    constructor(id, name, description, tradingStrategy, exitStrategy) {
+        super(id, name, description);
+        this.tradingStrategy = tradingStrategy;
+        this.exitStrategy = exitStrategy;
+    }
 
-    process(candles, inPosition, entryPrice) {
-        const tradingResult = this.tradingStrategy.process(candles);
-        let operation = tradingResult.recommendedOperation;
-        let exitPrice = null;
-        let exitTriggered = false;
+    process(candles, inPosition, entryPrice) {
+        const tradingResult = this.tradingStrategy.process(candles);
+        let operation = tradingResult.recommendedOperation;
+        let exitPrice = null;
+        let exitTriggered = false;
 
-        if (inPosition && entryPrice) {
-            const currentCandle = candles[candles.length - 1];
-            const shouldExit = this.exitStrategy.shouldExit(entryPrice, currentCandle.low, candles);
-            const tradingSell = tradingResult.recommendedOperation === Operation.SELL;
+        if (inPosition && entryPrice) {
+            const currentCandle = candles[candles.length - 1];
+            const shouldExit = this.exitStrategy.shouldExit(entryPrice, currentCandle.low, candles);
+            const tradingSell = tradingResult.recommendedOperation === Operation.SELL;
 
-            exitTriggered = shouldExit;
+            exitTriggered = shouldExit;
 
-            if (shouldExit || tradingSell) {
-                operation = Operation.SELL;
-                if (shouldExit) {
-                    exitPrice = this.exitStrategy.calculateExitPrice(entryPrice, currentCandle.low, candles);
-                }
-            }
-        }
+            if (shouldExit || tradingSell) {
+                operation = Operation.SELL;
+                if (shouldExit) {
+                    exitPrice = this.exitStrategy.calculateExitPrice(entryPrice, currentCandle.low, candles);
+                }
+            }
+        }
 
-        const result = new FullStrategyResult(operation, tradingResult, exitTriggered);
-        if (operation === Operation.SELL && exitPrice !== null) {
-            result.exitPrice = exitPrice;
-        }
-        return result;
-    }
+        const result = new FullStrategyResult(operation, tradingResult, exitTriggered);
+        if (operation === Operation.SELL && exitPrice !== null) {
+            result.exitPrice = exitPrice;
+        }
+        return result;
+    }
 
-    getOperationDayTime() {
-       this.tradingStrategy.getOperationDayTime();
-    }
+    getOperationDayTime() {
+        return this.tradingStrategy.getOperationDayTime(); // <-- Added return
+G   }
 }
 
 export default DefaultFullStrategy;

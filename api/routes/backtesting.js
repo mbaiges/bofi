@@ -6,6 +6,7 @@ import DefaultFullStrategy from '../strategies/DefaultFullStrategy.js';
 import DelayedCompositeStrategy from '../strategies/DelayedCompositeStrategy.js';
 import FullStrategy from '../strategies/FullStrategy.js';
 import StandardBollingerBandsStrategy from '../strategies/StandardBollingerBandsStrategy.js';
+import RSIBollingerStrategy from '../strategies/RSIBollingerStrategy.js';
 import OperationDayTime from '../models/strategies/OperationDayTime.js';
 
 const router = Router();
@@ -27,6 +28,10 @@ function buildStrategy({ id, config }) {
                 config.stdDev,
                 config.adxStrengthThreshold
             );
+        
+        case 'rsi-bollinger-strategy': // Add new strategy case
+        case 'RSIBollingerStrategy':
+            return new RSIBollingerStrategy();
 
         case 'default-full-strategy':
         case 'DefaultFullStrategy': {
