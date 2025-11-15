@@ -1,5 +1,4 @@
 import FullStrategy from './FullStrategy.js';
-import StrategyResult from '../models/strategies/StrategyResult.js';
 import Operation from '../models/strategies/Operation.js';
 import FullStrategyResult from '../models/strategies/FullStrategyResult.js';
 
@@ -39,6 +38,10 @@ class DefaultFullStrategy extends FullStrategy {
             result.exitPrice = exitPrice;
         }
         return result;
+    }
+
+    getOperationDayTime() {
+       this.tradingStrategy.getOperationDayTime();
     }
 }
 

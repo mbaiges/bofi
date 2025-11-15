@@ -20,6 +20,13 @@ class FullStrategy extends Strategy {
     process(candles, inPosition, entryPrice) {
         throw new Error("Method 'process()' must be implemented.");
     }
+
+    /**
+     * @returns {import('../models/strategies/OperationDayTime')}
+     */
+    getOperationDayTime() {
+        throw new Error("Method 'getOperationDayTime()' must be implemented.");
+    }
 }
 
 export default FullStrategy;

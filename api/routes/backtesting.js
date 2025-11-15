@@ -6,6 +6,7 @@ import DefaultFullStrategy from '../strategies/DefaultFullStrategy.js';
 import DelayedCompositeStrategy from '../strategies/DelayedCompositeStrategy.js';
 import FullStrategy from '../strategies/FullStrategy.js';
 import StandardBollingerBandsStrategy from '../strategies/StandardBollingerBandsStrategy.js';
+import OperationDayTime from '../models/strategies/OperationDayTime.js';
 
 const router = Router();
 
@@ -117,7 +118,7 @@ router.post('/', async (req, res) => {
         
         // Entry logic: buy based on entry_time setting
         if (!inPosition && stratResult.recommendedOperation === 'BUY' && cash > 0) {
-          const entryPriceCandle = c.close;
+          const entryPriceCandle = strategyInst.getOperationDayTime() === OperationDayTime.OPEN ? c.open : c.close;
           let nominalsToBuy = cash / (entryPriceCandle * (1 + feePct));
 
           if (settings.truncateNominals) {

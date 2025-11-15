@@ -1,5 +1,6 @@
 import FullStrategy from './FullStrategy.js';
 import Operation from '../models/strategies/Operation.js';
+import OperationDayTime from '../models/strategies/OperationDayTime.js';
 import CompositeStrategyResults from '../models/strategies/CompositeStrategyResults.js';
 import DelayedCompositeStrategyResult from '../models/strategies/DelayedCompositeStrategyResult.js';
 
