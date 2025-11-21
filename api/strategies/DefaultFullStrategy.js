@@ -9,8 +9,8 @@ class DefaultFullStrategy extends FullStrategy {
     constructor(id, name, description, tradingStrategy, exitStrategy) {
         super(id, name, description);
         this.tradingStrategy = tradingStrategy;
-        this.exitStrategy = exitStrategy;
-    }
+        this.exitStrategy = exitStrategy;
+ }  // <-- Added closing bracket
 
     process(candles, inPosition, entryPrice) {
         const tradingResult = this.tradingStrategy.process(candles);

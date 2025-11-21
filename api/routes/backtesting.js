@@ -8,6 +8,7 @@ import FullStrategy from '../strategies/FullStrategy.js';
 import StandardBollingerBandsStrategy from '../strategies/StandardBollingerBandsStrategy.js';
 import RSIBollingerStrategy from '../strategies/RSIBollingerStrategy.js';
 import OperationDayTime from '../models/strategies/OperationDayTime.js';
+import moment from 'moment';
 
 const router = Router();
 
@@ -75,6 +76,21 @@ router.post('/', async (req, res) => {
     if (!Array.isArray(tradings)) {
       return res.status(400).json({ error: 'tradings should be an array' });
     }
+    
+    // Validate dates
+    if (settings.from) {
+      const fromDate = moment(settings.from, 'YYYY-MM-DD', true);
+      if (!fromDate.isValid()) {
+        return res.status(400).json({ error: `Invalid 'from' date: "${settings.from}". Date must be in YYYY-MM-DD format and be a valid calendar date.` });
+      }
+    }
+    if (settings.to) {
+      const toDate = moment(settings.to, 'YYYY-MM-DD', true);
+      if (!toDate.isValid()) {
+        return res.status(400).json({ error: `Invalid 'to' date: "${settings.to}". Date must be in YYYY-MM-DD format and be a valid calendar date.` });
+      }
+    }
+    
     const timespan = settings.timespan || 'day';
     const range = settings.range || 1;
     const feePct = Number(settings.fee) || 0;

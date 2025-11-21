@@ -3,6 +3,15 @@ import { hydrateWithIndicators, indicators } from './indicators/indicators.js';
 import moment from 'moment';
 import HydratedCandle from '../models/HydratedCandle.js';
 
+const validateDate = (dateString, paramName) => {
+  if (!dateString) return null;
+  const date = moment(dateString, 'YYYY-MM-DD', true);
+  if (!date.isValid()) {
+    throw new Error(`Invalid ${paramName} date: "${dateString}". Date must be in YYYY-MM-DD format and be a valid calendar date.`);
+  }
+  return date;
+};
+
 const getRequestedPeriods = (from, to, range, timespan) => {
   const fromDate = moment(from)
   const toDate = moment(to)
@@ -20,6 +29,14 @@ const calculateFromDate = (to, totalPeriods, range, timespan) => {
 
 export async function getCandles(options) {
   const { symbol, hydrate, from, to, limit = 100, range = 1, timespan = 'day' } = options
+
+  // Validate dates if provided
+  if (from) {
+    validateDate(from, 'from');
+  }
+  if (to) {
+    validateDate(to, 'to');
+  }
 
   // Always fetch from 2023-01-01 or earlier if requested date is earlier
   const MIN_FETCH_DATE = '2023-01-01'

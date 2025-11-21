@@ -15,7 +15,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
         }
         
@@ -24,17 +24,46 @@
             margin-bottom: 20px;
             color: #ffffff;
         }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+        }
         
         .chart-container {
             background-color: #2d2d2d;
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex: 3;
         }
         
         #chart {
             width: 100%;
             height: 500px;
+        }
+
+        .backtesting-container {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #backtest-json {
+            width: 100%;
+            height: 400px;
+            background-color: #3d3d3d;
+            color: #ffffff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            resize: vertical;
+            margin-bottom: 10px;
         }
         
         .loading {
@@ -124,6 +153,48 @@
             background-color: #666;
             cursor: not-allowed;
         }
+
+        #backtest-results {
+            font-size: 14px;
+        }
+
+        #backtest-results h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #4fc3f7;
+        }
+
+        .backtest-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background-color: #2d2d2d;
+            border-radius: 4px;
+        }
+
+        .stat-label {
+            color: #aaa;
+            font-weight: normal;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .benchmark-info {
+            padding: 10px;
+            background-color: #2d2d2d;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -170,10 +241,18 @@
             <button id="load-chart" class="load-button">Load Chart</button>
         </div>
         
-        <div class="chart-container">
-            <div id="loading" class="loading">Loading data...</div>
-            <div id="error" class="error" style="display: none;">Error loading data</div>
-            <div id="chart" style="display: none;"></div>
+        <div class="main-content">
+            <div class="chart-container">
+                <div id="loading" class="loading">Loading data...</div>
+                <div id="error" class="error" style="display: none;">Error loading data</div>
+                <div id="chart" style="display: none;"></div>
+            </div>
+            <div class="backtesting-container">
+                <h2>Backtesting</h2>
+                <textarea id="backtest-json" placeholder="Enter backtesting JSON configuration..."></textarea>
+                <button id="run-backtest" class="load-button">Run Backtest</button>
+                <div id="backtest-results" style="display: none; margin-top: 20px; padding: 15px; background-color: #3d3d3d; border-radius: 5px;"></div>
+            </div>
         </div>
         
         <div class="info">

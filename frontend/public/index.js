@@ -1,4 +1,7 @@
 let chart = null;
+let backtestSeries = null;
+let backtestMarkers = [];
+let candlestickSeries = null;
 
 function processStrategyDataByStrategy(candles, strategiesDetails) {
     const strategyData = {};
@@ -89,7 +92,6 @@ function addStrategyTooltip(chart, strategySeries, strategiesDetails) {
             return;
         }
 
-        // Check if we're hovering over strategy signals (pane 3)
         const seriesData = param.seriesData;
         let tooltipContent = '';
         let foundStrategy = false;
@@ -158,7 +160,6 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         document.getElementById('chart').style.display = 'block';
         
         if (chart) {
-            // Clean up existing tooltip
             const existingTooltip = document.getElementById('strategy-tooltip');
             if (existingTooltip) {
                 existingTooltip.remove();
@@ -186,8 +187,7 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
             },
         });
         
-        // Pane 0 (default) for candlesticks
-        const candlestickSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+        candlestickSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
             upColor: '#26a69a',
             downColor: '#ef5350',
             borderVisible: false,
@@ -195,27 +195,19 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
             wickDownColor: '#ef5350',
         }, 0);
 
-        // Pane 1 for Volume
         const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
             color: '#26a69a',
             priceFormat: { type: 'volume' },
-        }, 1); // <-- Correct API: Pass pane index as 2nd argument
+        }, 1);
 
-        // Pane 2 for DMI
         const adxSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#2962FF', lineWidth: 2, title: 'ADX' }, 2);
         const pdiSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#26a69a', lineWidth: 2, title: '+DI' }, 2);
         const ndiSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '#ef5350', lineWidth: 2, title: '-DI' }, 2);
 
-        // Pane 3 for Strategy Signals - Create one series per strategy
-        const strategyColors = [
-            '#26a69a', '#ef5350', '#ff9800', '#9c27b0', '#2196f3', 
-            '#4caf50', '#ff5722', '#795548', '#607d8b', '#e91e63'
-        ];
-        
+        const strategyColors = ['#26a69a', '#ef5350', '#ff9800', '#9c27b0', '#2196f3', '#4caf50', '#ff5722', '#795548', '#607d8b', '#e91e63'];
         const strategySeries = {};
         let colorIndex = 0;
         
-        // Create series for each strategy
         if (strategiesDetails) {
             Object.keys(strategiesDetails).forEach(strategyId => {
                 const strategyInfo = strategiesDetails[strategyId];
@@ -259,17 +251,14 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         pdiSeries.setData(dmiData.map(d => ({ time: d.time, value: d.pdi })));
         ndiSeries.setData(dmiData.map(d => ({ time: d.time, value: d.ndi })));
 
-        // Process and set strategy signals data for each strategy
         const strategyData = processStrategyDataByStrategy(candles, strategiesDetails);
         
-        // Set data for each strategy series
         Object.keys(strategySeries).forEach(strategyId => {
             if (strategyData[strategyId]) {
                 strategySeries[strategyId].setData(strategyData[strategyId]);
             }
         });
 
-        // Add custom tooltip for strategy signals
         addStrategyTooltip(chart, strategySeries, strategiesDetails);
 
         chart.timeScale().fitContent();
@@ -289,6 +278,292 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         const loadButton = document.getElementById('load-chart');
         loadButton.disabled = false;
         loadButton.textContent = 'Load Chart';
+    }
+}
+
+function displayBacktestResults(results) {
+    const resultsContainer = document.getElementById('backtest-results');
+    if (!resultsContainer) return;
+
+    // Check for both camelCase and snake_case property names
+    const tradingsResults = results.tradingsResults || results.tradings_results;
+    
+    if (tradingsResults && tradingsResults.length > 0) {
+        const tradingResult = tradingsResults[0];
+        const balance = tradingResult.balance;
+        const benchmark = results.benchmark;
+
+        // Handle both camelCase and snake_case property names
+        const roi = balance.roi || 0;
+        const initialBalance = balance.initialBalance || balance.initial_balance || 0;
+        const finalBalance = balance.finalBalance || balance.final_balance || 0;
+        const totalFees = balance.totalFees || balance.total_fees || 0;
+        const winningTrades = balance.winningTrades || balance.winning_trades || 0;
+        const losingTrades = balance.losingTrades || balance.losing_trades || 0;
+        const totalWins = balance.totalWins || balance.total_wins || 0;
+        const totalLosses = balance.totalLosses || balance.total_losses || 0;
+        const bestRoi = benchmark?.bestRoi ?? benchmark?.best_roi ?? null;
+
+        const roiPercent = (roi * 100).toFixed(2);
+        const roiColor = roi >= 0 ? '#26a69a' : '#ef5350';
+        
+        resultsContainer.innerHTML = `
+            <h3>Backtest Results</h3>
+            <div class="backtest-stats">
+                <div class="stat-item">
+                    <span class="stat-label">ROI:</span>
+                    <span class="stat-value" style="color: ${roiColor}">${roiPercent}%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Initial Balance:</span>
+                    <span class="stat-value">$${initialBalance.toFixed(2)}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Final Balance:</span>
+                    <span class="stat-value">$${finalBalance.toFixed(2)}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Fees:</span>
+                    <span class="stat-value">$${totalFees.toFixed(2)}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Winning Trades:</span>
+                    <span class="stat-value" style="color: #26a69a">${winningTrades}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Losing Trades:</span>
+                    <span class="stat-value" style="color: #ef5350">${losingTrades}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Wins:</span>
+                    <span class="stat-value" style="color: #26a69a">$${totalWins.toFixed(2)}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Losses:</span>
+                    <span class="stat-value" style="color: #ef5350">$${totalLosses.toFixed(2)}</span>
+                </div>
+            </div>
+            ${bestRoi !== null ? `
+                <div class="benchmark-info">
+                    <strong>Best ROI:</strong> <span style="color: ${bestRoi >= 0 ? '#26a69a' : '#ef5350'}">${(bestRoi * 100).toFixed(2)}%</span>
+                </div>
+            ` : ''}
+        `;
+        resultsContainer.style.display = 'block';
+    }
+}
+
+async function runBacktest() {
+    const backtestButton = document.getElementById('run-backtest');
+    try {
+        backtestButton.disabled = true;
+        backtestButton.textContent = 'Running...';
+
+        const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+        const from = document.getElementById('from-date').value;
+        const to = document.getElementById('to-date').value;
+        const backtestConfigRaw = document.getElementById('backtest-json').value;
+
+        if (!symbol || !from || !to) {
+            alert('Please ensure symbol, from date, and to date are selected.');
+            return;
+        }
+
+        let backtestConfig;
+        try {
+            backtestConfig = JSON.parse(backtestConfigRaw);
+        } catch (e) {
+            alert('Invalid JSON in backtesting configuration.');
+            return;
+        }
+
+        const response = await fetch(`/api/backtesting?symbol=${symbol}&from=${from}&to=${to}`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(backtestConfig)
+        });
+
+        let responseData;
+        try {
+            responseData = await response.json();
+        } catch (e) {
+            throw new Error(`Failed to parse response: ${e.message}`);
+        }
+        
+        // Check if the response itself is an error
+        if (!response.ok) {
+            const errorMsg = responseData.error || responseData.message || `HTTP error! status: ${response.status}`;
+            throw new Error(errorMsg);
+        }
+        
+        // Debug: log the response structure
+        console.log('Backtest response status:', response.status);
+        console.log('Backtest response:', responseData);
+        console.log('Response keys:', Object.keys(responseData || {}));
+
+        // Check for both camelCase and snake_case property names
+        const tradingsResults = responseData.tradingsResults || responseData.tradings_results;
+        
+        // Get the first trading result (assuming single trading for now)
+        if (!tradingsResults) {
+            console.error('tradingsResults is undefined/null. Full response:', JSON.stringify(responseData, null, 2));
+            throw new Error('No tradingsResults property in response. Check console for details.');
+        }
+        
+        if (tradingsResults.length === 0) {
+            console.error('tradingsResults array is empty. Full response:', JSON.stringify(responseData, null, 2));
+            throw new Error('No trading results returned from backtest (empty array). Check console for details.');
+        }
+
+        const tradingResult = tradingsResults[0];
+        
+        // Check if there's an error in the result
+        if (tradingResult.error) {
+            throw new Error(tradingResult.error);
+        }
+        
+        // Check for both camelCase and snake_case property names
+        const tradingCandles = tradingResult.tradingCandles || tradingResult.trading_candles;
+
+        if (!tradingCandles || tradingCandles.length === 0) {
+            console.error('No tradingCandles found. Trading result:', tradingResult);
+            throw new Error('No candles in backtest results');
+        }
+
+        // Load chart with backtest candles
+        await loadBacktestChart(symbol, tradingCandles, responseData);
+
+        // Display results
+        displayBacktestResults(responseData);
+
+    } catch (error) {
+        console.error('Error running backtest:', error);
+        alert(`Error running backtest: ${error.message}`);
+    } finally {
+        backtestButton.disabled = false;
+        backtestButton.textContent = 'Run Backtest';
+    }
+}
+
+async function loadBacktestChart(symbol, candles, backtestResults) {
+    try {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('error').style.display = 'none';
+        document.getElementById('chart').style.display = 'none';
+
+        if (chart) {
+            const existingTooltip = document.getElementById('strategy-tooltip');
+            if (existingTooltip) {
+                existingTooltip.remove();
+            }
+            chart.remove();
+        }
+
+        const chartElement = document.getElementById('chart');
+        chart = LightweightCharts.createChart(chartElement, {
+            width: chartElement.clientWidth,
+            height: 500,
+            layout: {
+                background: { color: '#2d2d2d' },
+                textColor: '#d1d4dc',
+            },
+            grid: {
+                vertLines: { color: '#444' },
+                horzLines: { color: '#444' },
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+            },
+            timeScale: {
+                borderColor: '#485c7b',
+            },
+        });
+
+        candlestickSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderVisible: false,
+            wickUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+        }, 0);
+
+        // Prepare chart data with markers
+        let previousNominals = 0;
+        const chartData = candles.map((candle, index) => {
+            const time = candle.date.split('T')[0];
+            const currentNominals = candle.current_nominals || 0;
+            
+            const dataPoint = {
+                time: time,
+                open: candle.open,
+                high: candle.high,
+                low: candle.low,
+                close: candle.close,
+            };
+
+            // Add markers to the data point for buy/sell signals
+            // Detect buy signal (transition from 0 to >0 nominals)
+            if (previousNominals === 0 && currentNominals > 0) {
+                // Include marker in the data point
+                dataPoint.markers = [{
+                    time: time,
+                    position: 'belowBar',
+                    color: '#26a69a',
+                    shape: 'arrowUp',
+                    text: 'BUY',
+                    size: 2
+                }];
+            }
+            // Detect sell signal (transition from >0 to 0 nominals)
+            else if (previousNominals > 0 && currentNominals === 0) {
+                // Include marker in the data point
+                dataPoint.markers = [{
+                    time: time,
+                    position: 'aboveBar',
+                    color: '#ef5350',
+                    shape: 'arrowDown',
+                    text: 'SELL',
+                    size: 2
+                }];
+            }
+
+            previousNominals = currentNominals;
+            return dataPoint;
+        });
+
+        candlestickSeries.setData(chartData);
+
+        // Add volume series
+        const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+            color: '#26a69a',
+            priceFormat: { type: 'volume' },
+        }, 1);
+
+        const volumeData = candles.map(candle => ({
+            time: candle.date.split('T')[0],
+            value: candle.volume,
+            color: candle.close >= candle.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
+        }));
+
+        volumeSeries.setData(volumeData);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('chart').style.display = 'block';
+
+        chart.timeScale().fitContent();
+        document.getElementById('current-symbol').textContent = symbol;
+        document.getElementById('chart-title').textContent = `${symbol} Backtest Results`;
+
+        console.log(`Backtest chart loaded with ${candles.length} candles for ${symbol}`);
+
+    } catch (error) {
+        console.error('Error loading backtest chart:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = `Error: ${error.message}`;
     }
 }
 
@@ -327,6 +602,8 @@ document.addEventListener('DOMContentLoaded', function() {
             loadChart(symbol, range, timespan, limit);
         }
     });
+
+    document.getElementById('run-backtest').addEventListener('click', runBacktest);
     
     document.getElementById('symbol').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
