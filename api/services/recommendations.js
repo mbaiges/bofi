@@ -9,7 +9,7 @@ import FullStrategy from '../strategies/FullStrategy.js';
  * @returns {Object} Recommendations results
  */
 export async function processRecommendations(input) {
-    const { tradings } = input;
+    const { tradings, currentDate } = input;
 
     if (!Array.isArray(tradings)) {
         throw new Error('tradings must be an array');
@@ -39,7 +39,11 @@ export async function processRecommendations(input) {
         const strategiesResults = [];
 
         for (const strategyConfig of strategies) {
-            const { confStrategyId, timespan, upgradeable, avgEntryPrice } = strategyConfig;
+            // Accept both confStrategyId and conf_strategy_id
+            const confStrategyId = strategyConfig.confStrategyId || strategyConfig.conf_strategy_id;
+            const timespan = strategyConfig.timespan;
+            const upgradeable = strategyConfig.upgradeable;
+            const avgEntryPrice = strategyConfig.avgEntryPrice || strategyConfig.avg_entry_price;
 
             if (!confStrategyId) {
                 strategiesResults.push({
@@ -69,9 +73,9 @@ export async function processRecommendations(input) {
                     continue;
                 }
 
-                // Calculate date range: from = 1 week ago, to = current date
-                const to = moment().format('YYYY-MM-DD');
-                const from = moment().subtract(1, 'week').format('YYYY-MM-DD');
+                // Calculate date range: from = 1 week ago, to = currentDate or today
+                const to = currentDate || moment().format('YYYY-MM-DD');
+                const from = moment(to).subtract(1, 'week').format('YYYY-MM-DD');
 
                 // Fetch candles with hydration for indicators
                 const candles = await getCandles({

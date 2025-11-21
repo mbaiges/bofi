@@ -99,7 +99,7 @@ export async function getCandles(options) {
 
   if (from) {
     const fromTimestamp = Math.floor(new Date(from).getTime() / 1000)
-    const toTimestamp = to ? Math.floor(new Date(to).getTime() / 1000) : null
+    const toTimestamp = to ? Math.floor((new Date(to).getTime() + 24 * 60 * 60 * 1000) / 1000) : null;
     data = data.filter(c => c.timestamp >= fromTimestamp && (!toTimestamp || c.timestamp <= toTimestamp))
   } else {
     data = data.slice(-limit)

@@ -6,7 +6,7 @@ const router = Router();
 
 router.post('/', async (req, res) => {
     try {
-        const { tradings } = req.body;
+        const { tradings, currentDate } = req.body;
 
         // Input validation
         if (!tradings) {
@@ -55,8 +55,8 @@ router.post('/', async (req, res) => {
             }
         }
 
-        // Process recommendations
-        const results = await processRecommendations({ tradings });
+        // Pass currentDate to processRecommendations
+        const results = await processRecommendations({ tradings, currentDate });
 
         res.json(results);
     } catch (error) {
