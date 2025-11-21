@@ -5,7 +5,7 @@ import { calculateStrategy } from '../services/strategies.js'
 const router = Router()
 
 router.get('/', async (req, res) => {
-  const { symbol = 'GOOGL', range = 1, timespan = 'day', limit = 100, hydrate, from, to } = req.query
+  const { symbol = 'GOOGL', range = 1, timespan = 'day', limit, hydrate, from, to } = req.query
   
   try {
     console.log(`Fetching ${symbol} data...`)

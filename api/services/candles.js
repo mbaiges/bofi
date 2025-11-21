@@ -28,7 +28,7 @@ const calculateFromDate = (to, totalPeriods, range, timespan) => {
 }
 
 export async function getCandles(options) {
-  const { symbol, hydrate, from, to, limit = 100, range = 1, timespan = 'day' } = options
+  const { symbol, hydrate, from, to, limit, range = 1, timespan = 'day' } = options
 
   // Validate dates if provided
   if (from) {

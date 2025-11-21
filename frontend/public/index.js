@@ -248,9 +248,9 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
 
         const dmiData = candles.map(c => ({
             time: c.date.split('T')[0],
-            adx: c.indicators?.dmi?.adx,
-            pdi: c.indicators?.dmi?.di_positive,
-            ndi: c.indicators?.dmi?.di_negative
+            adx: c.indicators?.dmi_14?.adx,
+            pdi: c.indicators?.dmi_14?.di_positive,
+            ndi: c.indicators?.dmi_14?.di_negative
         })).filter(d => d.adx !== null);
         
         adxSeries.setData(dmiData.map(d => ({ time: d.time, value: d.adx })));
