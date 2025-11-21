@@ -379,15 +379,14 @@ async function runBacktest() {
         backtestButton.disabled = true;
         backtestButton.textContent = 'Running...';
 
-        const symbol = document.getElementById('symbol').value.trim().toUpperCase();
-        const from = document.getElementById('from-date').value;
-        const to = document.getElementById('to-date').value;
-        const backtestConfigRaw = document.getElementById('backtest-json').value;
+        // Get values from selectors as defaults
+        const selectorSymbol = document.getElementById('symbol').value.trim().toUpperCase();
+        const selectorFrom = document.getElementById('from-date').value;
+        const selectorTo = document.getElementById('to-date').value;
+        const selectorRange = parseInt(document.getElementById('range').value) || 1;
+        const selectorTimespan = document.getElementById('timespan').value;
 
-        if (!symbol || !from || !to) {
-            alert('Please ensure symbol, from date, and to date are selected.');
-            return;
-        }
+        const backtestConfigRaw = document.getElementById('backtest-json').value;
 
         let backtestConfig;
         try {
@@ -397,7 +396,37 @@ async function runBacktest() {
             return;
         }
 
-        const response = await fetch(`/api/backtesting?symbol=${symbol}&from=${from}&to=${to}`,
+        // Extract values from config settings, fallback to selectors
+        const settings = backtestConfig.settings || {};
+        const ticker = backtestConfig.tradings?.[0]?.ticker || selectorSymbol;
+        const from = settings.from || selectorFrom;
+        const to = settings.to || selectorTo;
+        const range = settings.range || selectorRange;
+        const timespan = settings.timespan || selectorTimespan;
+
+        // Ensure we have required values
+        if (!ticker || !from || !to) {
+            alert('Please ensure symbol (ticker), from date, and to date are set either in the JSON config or in the selectors.');
+            return;
+        }
+
+        // Update config with merged values
+        if (!backtestConfig.settings) {
+            backtestConfig.settings = {};
+        }
+        backtestConfig.settings.from = from;
+        backtestConfig.settings.to = to;
+        backtestConfig.settings.range = range;
+        backtestConfig.settings.timespan = timespan;
+
+        // Update tradings array with ticker if not present
+        if (!backtestConfig.tradings || backtestConfig.tradings.length === 0) {
+            backtestConfig.tradings = [{ ticker: ticker, strategy: {} }];
+        } else {
+            backtestConfig.tradings[0].ticker = ticker;
+        }
+
+        const response = await fetch(`/api/backtesting?symbol=${ticker}&from=${from}&to=${to}`,
         {
             method: 'POST',
             headers: {
@@ -453,8 +482,34 @@ async function runBacktest() {
             throw new Error('No candles in backtest results');
         }
 
+        // Update selectors with values from settings if they were provided
+        if (backtestConfig.settings) {
+            const settings = backtestConfig.settings;
+            
+            // Update ticker from tradings
+            if (backtestConfig.tradings && backtestConfig.tradings[0] && backtestConfig.tradings[0].ticker) {
+                document.getElementById('symbol').value = backtestConfig.tradings[0].ticker;
+            }
+            
+            // Update from/to dates if provided in settings
+            if (settings.from) {
+                document.getElementById('from-date').value = settings.from;
+            }
+            if (settings.to) {
+                document.getElementById('to-date').value = settings.to;
+            }
+            
+            // Update range and timespan if provided in settings
+            if (settings.range) {
+                document.getElementById('range').value = settings.range;
+            }
+            if (settings.timespan) {
+                document.getElementById('timespan').value = settings.timespan;
+            }
+        }
+
         // Load chart with backtest candles
-        await loadBacktestChart(symbol, tradingCandles, responseData);
+        await loadBacktestChart(ticker, tradingCandles, responseData);
 
         // Display results
         displayBacktestResults(responseData);
