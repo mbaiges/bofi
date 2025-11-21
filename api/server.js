@@ -7,6 +7,7 @@ import { camelCaseRequest } from './middleware/camelCaseRequest.js'
 // import apiRouter from './routes/index.js'
 import candlesRouter from './routes/candles.js'
 import backtestingRouter from './routes/backtesting.js'
+import recommendationsRouter from './routes/recommendations.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -30,6 +31,7 @@ app.use(express.static(path.join(__dirname, '../frontend/public')))
 // API routes
 app.use('/api/candles', candlesRouter)
 app.use('/api/backtesting', backtestingRouter)
+app.use('/api/recommendations', recommendationsRouter)
 
 // Start server
 app.listen(PORT, () => {

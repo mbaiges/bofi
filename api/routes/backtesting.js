@@ -1,70 +1,11 @@
 import { Router } from 'express';
 import { getCandles } from '../services/candles.js';
-import StandardDMIStrategy from '../strategies/StandardDMIStrategy.js';
-import TakeProfitExitStrategy from '../exit_strategies/TakeProfitExitStrategy.js';
-import DefaultFullStrategy from '../strategies/DefaultFullStrategy.js';
-import DelayedCompositeStrategy from '../strategies/DelayedCompositeStrategy.js';
+import { buildStrategy } from '../services/strategies.js';
 import FullStrategy from '../strategies/FullStrategy.js';
-import StandardBollingerBandsStrategy from '../strategies/StandardBollingerBandsStrategy.js';
-import RSIBollingerStrategy from '../strategies/RSIBollingerStrategy.js';
 import OperationDayTime from '../models/strategies/OperationDayTime.js';
 import moment from 'moment';
 
 const router = Router();
-
-function buildStrategy({ id, config }) {
-    switch (id) {
-        case 'standard-dmi-strategy':
-        case 'StandardDMIStrategy':
-            return new StandardDMIStrategy(config.adxStrengthThreshold);
-
-        case 'take-profit-exit-strategy':
-        case 'TakeProfitExitStrategy':
-            return new TakeProfitExitStrategy(config.pct);
-
-        case 'standard-bollinger-bands-strategy':
-        case 'StandardBollingerBandsStrategy':
-            return new StandardBollingerBandsStrategy(
-                config.period,
-                config.stdDev,
-                config.adxStrengthThreshold
-            );
-        
-        case 'rsi-bollinger-strategy': // Add new strategy case
-        case 'RSIBollingerStrategy':
-            return new RSIBollingerStrategy();
-
-        case 'default-full-strategy':
-        case 'DefaultFullStrategy': {
-            const tradingStrategy = buildStrategy(config.tradingStrategy);
-            const exitStrategy = buildStrategy(config.exitStrategy);
-            return new DefaultFullStrategy(
-                'default-full-strategy',
-                'Default Full Strategy',
-                'Combines a trading and an exit strategy',
-                tradingStrategy,
-                exitStrategy
-            );
-        }
-
-        case 'delayed-composite-strategy':
-        case 'DelayedCompositeStrategy': {
-            const strategies = config.strategies.map(stratConfig => buildStrategy(stratConfig));
-            return new DelayedCompositeStrategy(
-                'delayed-composite-strategy',
-                'Delayed Composite Strategy',
-                'Aggregates signals from multiple strategies',
-                strategies,
-                config.minSignals,
-                config.delayMin,
-                config.delayMax
-            );
-        }
-
-        default:
-            throw new Error(`Unknown strategy id: ${id}`);
-    }
-}
 
 router.post('/', async (req, res) => {
   try {
