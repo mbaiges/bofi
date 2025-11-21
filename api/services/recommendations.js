@@ -98,7 +98,7 @@ export async function processRecommendations(input) {
                 const entryPrice = inPosition ? avgEntryPrice : null;
                 const lastCandleIndex = candles.length - 1;
                 const strategyResult = strategyInstance.process(candles, inPosition, entryPrice);
-
+                const exitStrategyResult = strategyResult.exitStrategyResult;
                 // Extract recommended operation from last candle
                 const recommendedOperation = strategyResult.recommendedOperation || 'HOLD';
 
@@ -119,6 +119,7 @@ export async function processRecommendations(input) {
                     confStrategyId,
                     timespan,
                     recommendedOperation,
+                    exitStrategyResult,
                     recommendedUpgradedTimespan
                 });
 

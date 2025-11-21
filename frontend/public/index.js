@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const symbol = document.getElementById('symbol').value.trim().toUpperCase();
         const range = parseInt(document.getElementById('range').value) || 1;
         const timespan = document.getElementById('timespan').value;
-        const limit = parseInt(document.getElementById('limit').value) || 100;
+        // const limit = parseInt(document.getElementById('limit').value) || 100;
         const from = document.getElementById('from-date').value;
         const to = document.getElementById('to-date').value;
         
