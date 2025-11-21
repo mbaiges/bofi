@@ -550,6 +550,56 @@ async function loadBacktestChart(symbol, candles, backtestResults) {
 
         volumeSeries.setData(volumeData);
 
+        // Add buy/sell operations series (similar to strategy signals in regular chart)
+        const operationsSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+            color: '#26a69a',
+            priceFormat: { type: 'volume' },
+            title: 'Backtest Operations'
+        }, 3);
+
+        // Process buy/sell operations from strategy results
+        // Reset previousNominals for the operations data processing
+        previousNominals = 0;
+        const operationsData = candles.map(candle => {
+            const time = candle.date.split('T')[0];
+            const currentNominals = candle.current_nominals || 0;
+            const strategyResult = candle.strategy_result;
+            
+            let signalValue = 0;
+            let color = 'rgba(38, 166, 154, 0.8)';
+
+            // Detect buy signal (transition from 0 to >0 nominals)
+            if (previousNominals === 0 && currentNominals > 0) {
+                signalValue = 1;
+                color = 'rgba(38, 166, 154, 0.8)'; // Green for BUY
+            }
+            // Detect sell signal (transition from >0 to 0 nominals)
+            else if (previousNominals > 0 && currentNominals === 0) {
+                signalValue = -1;
+                color = 'rgba(239, 83, 80, 0.8)'; // Red for SELL
+            }
+            // Show strategy recommendation even if no position change
+            else if (strategyResult && strategyResult.recommended_operation) {
+                if (strategyResult.recommended_operation === 'BUY') {
+                    signalValue = 0.5; // Smaller bar for BUY recommendation
+                    color = 'rgba(38, 166, 154, 0.5)';
+                } else if (strategyResult.recommended_operation === 'SELL') {
+                    signalValue = -0.5; // Smaller bar for SELL recommendation
+                    color = 'rgba(239, 83, 80, 0.5)';
+                }
+            }
+
+            previousNominals = currentNominals;
+
+            return {
+                time: time,
+                value: signalValue,
+                color: color
+            };
+        });
+
+        operationsSeries.setData(operationsData);
+
         document.getElementById('loading').style.display = 'none';
         document.getElementById('chart').style.display = 'block';
 
