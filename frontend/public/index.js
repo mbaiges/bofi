@@ -168,9 +168,15 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         }
         
         const chartElement = document.getElementById('chart');
+        
+        // Ensure chart container is visible before getting dimensions
+        chartElement.style.display = 'block';
+        const containerWidth = chartElement.clientWidth || chartElement.offsetWidth || window.innerWidth * 0.7;
+        const containerHeight = 500;
+        
         chart = LightweightCharts.createChart(chartElement, {
-            width: chartElement.clientWidth,
-            height: 500,
+            width: containerWidth,
+            height: containerHeight,
             layout: {
                 background: { color: '#2d2d2d' },
                 textColor: '#d1d4dc',
@@ -260,6 +266,20 @@ async function loadChart(symbol = 'GOOGL', range = 1, timespan = 'day', limit = 
         });
 
         addStrategyTooltip(chart, strategySeries, strategiesDetails);
+
+        // Force chart resize after it's visible to ensure proper sizing
+        setTimeout(() => {
+            if (chart) {
+                const finalWidth = chartElement.clientWidth || chartElement.offsetWidth;
+                if (finalWidth > 0) {
+                    chart.applyOptions({
+                        width: finalWidth,
+                        height: containerHeight,
+                    });
+                }
+                chart.timeScale().fitContent();
+            }
+        }, 50);
 
         chart.timeScale().fitContent();
         
@@ -463,9 +483,16 @@ async function loadBacktestChart(symbol, candles, backtestResults) {
         }
 
         const chartElement = document.getElementById('chart');
+        
+        // Ensure chart container is visible before getting dimensions
+        // Temporarily show it to get accurate width, or use parent width
+        chartElement.style.display = 'block';
+        const containerWidth = chartElement.clientWidth || chartElement.offsetWidth || window.innerWidth * 0.7;
+        const containerHeight = 500;
+        
         chart = LightweightCharts.createChart(chartElement, {
-            width: chartElement.clientWidth,
-            height: 500,
+            width: containerWidth,
+            height: containerHeight,
             layout: {
                 background: { color: '#2d2d2d' },
                 textColor: '#d1d4dc',
@@ -602,6 +629,20 @@ async function loadBacktestChart(symbol, candles, backtestResults) {
 
         document.getElementById('loading').style.display = 'none';
         document.getElementById('chart').style.display = 'block';
+
+        // Force chart resize after it's visible to ensure proper sizing
+        setTimeout(() => {
+            if (chart) {
+                const finalWidth = chartElement.clientWidth || chartElement.offsetWidth;
+                if (finalWidth > 0) {
+                    chart.applyOptions({
+                        width: finalWidth,
+                        height: containerHeight,
+                    });
+                }
+                chart.timeScale().fitContent();
+            }
+        }, 50);
 
         chart.timeScale().fitContent();
         document.getElementById('current-symbol').textContent = symbol;
